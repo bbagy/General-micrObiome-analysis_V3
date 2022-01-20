@@ -247,7 +247,8 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
         #res$ShortName <- paste(res$Phylum,res$Family," ",res$Genus," ",res$Species)
         
         
-        res$Species[res$Species=="NA NA"] <- ""
+        res$Species[res$Species=="NA NA"] <- "  "
+        
         if (!is.null(taxanames)) {
           if (data_type == "dada2" | data_type == "DADA2") {
             if(taxanames == "Species"){

@@ -23,7 +23,7 @@ Go_DA_fore <- function(project,file_path, files,type, alpha, beta,font, name, he
   
   # add input files
   path <- file_path
-  filenames <- list.files(path, pattern=file);filenames
+  filenames <- list.files(path, pattern=files);filenames
 
   print(path)
   print(filenames)
@@ -73,7 +73,7 @@ Go_DA_fore <- function(project,file_path, files,type, alpha, beta,font, name, he
     
     
     resSig.top$ancom[is.na(resSig.top$ancom)] <- "NS"
-    ancomshape <- c(16,1,1); names(ancomshape) <- c(TRUE, FALSE, "NS")
+    ancomshape <- c(18,5,5); names(ancomshape) <- c(TRUE, FALSE, "NS") # 16,1,1
     
     #dircolors <- c("#f7022a", "#4f86f7","grey"); names(dircolors) <- c("down", "up", "NS")
     

@@ -49,7 +49,7 @@ cat(blue("#--------------------------------------------------------------# \n"))
 cat(blue("#------       General analysis Of microbiome (Go)        ------# \n"))
 cat(blue("#------    Quick statistics and visualization tools      ------# \n"))
 cat(blue("#--------------------------------------------------------------# \n"))
-cat(red("                                      Version: Go_tools.2.7.3 \n"))
+cat(red("                                      Version: Go_tools.2.7.5 \n"))
 cat("                                              Write by Heekuk \n")
 cat(yellow("All the required packages were installed.\n"))
 cat(yellow("All the required packages were loaded.\n"))
@@ -8057,8 +8057,9 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
         #res$ShortName <- paste(res$Phylum,res$Family," ",res$Genus," ",res$Species)
         
         
+        res$Species[res$Species=="NA NA"] <- "  "
+        
         if (!is.null(taxanames)) {
-          
           if (data_type == "dada2" | data_type == "DADA2") {
             if(taxanames == "Species"){
               res$ShortName <- paste(res$Genus,"",res$Species)
@@ -8086,7 +8087,6 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
           }
         }
         
-        
 
         # use last taxa name
         for(taxa in c("Family", "Order", "Class","Phylum")){
@@ -8112,6 +8112,9 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
         print("pass4")
         res$KOName <- paste(res$Path,"",res$KO)
         res$ShortName <- paste(res$Path.des,"",res$KO.des)
+        
+        
+        unique(res$ShortName)
         
         # use last taxa name
         for(taxa in c("KO", "KO.des","Path","Path.des")){
@@ -8190,6 +8193,7 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
     }
   }
 }
+
 #' A Go_deseq2_volc
 #'
 
@@ -8242,7 +8246,7 @@ Go_DA_volc <- function(project, file_path,files, type,alpha,beta, name,font, hei
     dircolors <- c("#1170aa", "grey","#fc7d0b"); names(dircolors) <- c(as.character(basline), "NS", as.character(smvar))
 
     df.na$ancom[is.na(df.na$ancom)] <- "NS"
-    ancomshape <- c(16,1,1); names(ancomshape) <- c(TRUE, FALSE, "NS")
+    ancomshape <- c(18,5,5); names(ancomshape) <- c(TRUE, FALSE, "NS")# 16,1,1
     
     
     p1 <- ggplot(data=df.na, aes(x=log2FoldChange, y=-log10(pvalue),colour=deseq2)) + theme_bw() +
@@ -8302,7 +8306,7 @@ Go_DA_fore <- function(project,file_path, files,type, alpha, beta,font, name, he
   
   # add input files
   path <- file_path
-  filenames <- list.files(path, pattern=file);filenames
+  filenames <- list.files(path, pattern=files);filenames
 
   print(path)
   print(filenames)
@@ -8352,7 +8356,7 @@ Go_DA_fore <- function(project,file_path, files,type, alpha, beta,font, name, he
     
     
     resSig.top$ancom[is.na(resSig.top$ancom)] <- "NS"
-    ancomshape <- c(16,1,1); names(ancomshape) <- c(TRUE, FALSE, "NS")
+    ancomshape <- c(18,5,5); names(ancomshape) <- c(TRUE, FALSE, "NS") # 16,1,1
     
     #dircolors <- c("#f7022a", "#4f86f7","grey"); names(dircolors) <- c("down", "up", "NS")
     

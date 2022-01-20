@@ -50,7 +50,7 @@ Go_DA_volc <- function(project, file_path,files, type,alpha,beta, name,font, hei
     dircolors <- c("#1170aa", "grey","#fc7d0b"); names(dircolors) <- c(as.character(basline), "NS", as.character(smvar))
 
     df.na$ancom[is.na(df.na$ancom)] <- "NS"
-    ancomshape <- c(16,1,1); names(ancomshape) <- c(TRUE, FALSE, "NS")
+    ancomshape <- c(18,5,5); names(ancomshape) <- c(TRUE, FALSE, "NS")# 16,1,1
     
     
     p1 <- ggplot(data=df.na, aes(x=log2FoldChange, y=-log10(pvalue),colour=deseq2)) + theme_bw() +
