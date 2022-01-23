@@ -72,14 +72,14 @@ Go_DA_fore <- function(project,file_path, files,type, alpha, beta,font, name, he
     dircolors <- c("#1170aa", "grey","#fc7d0b"); names(dircolors) <- c(as.character(basline), "NS", as.character(smvar))
     
     
-    resSig.top$ancom[is.na(resSig.top$ancom)] <- "NS"
-    ancomshape <- c(18,5,5); names(ancomshape) <- c(TRUE, FALSE, "NS") # 16,1,1
+    resSig.top$ancom[is.na(resSig.top$ancom)] <- FALSE
+    ancomshape <- c(18,5); names(ancomshape) <- c(TRUE, FALSE) # 16,1,1
     
     #dircolors <- c("#f7022a", "#4f86f7","grey"); names(dircolors) <- c("down", "up", "NS")
     
     p1 <- ggplot(resSig.top, aes(x=reorder(taxa,log2FoldChange), y=log2FoldChange, color=deseq2)) + 
       geom_hline(yintercept=0) + geom_point(aes(shape=ancom)) + coord_flip() + theme_classic() + 
-      scale_color_manual(values=dircolors) + scale_shape_manual(values = ancomshape) + guides(shape = "none") +
+      scale_color_manual(values=dircolors) + scale_shape_manual(values = ancomshape) + #guides(shape = "none") +
        #theme_classic() +theme_bw() 
       geom_errorbar(aes(x=taxa, ymin=log2FoldChange-lfcSE, max=log2FoldChange+lfcSE), width=0.2)  + 
       ylim(c(-lims, lims))+ xlab("Taxa") + ylab("log2FoldChange")+

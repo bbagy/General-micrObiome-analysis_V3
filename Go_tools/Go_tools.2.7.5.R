@@ -1,24 +1,4 @@
 ##############################################
-#---- install package  by bioconductor ------#
-##############################################
-# 210322
-# install package and reads library is combined
-
-# version 1
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-
-bioconductors <- c("ANCOMBC","dada2","DESeq2", "dplyr","ggpubr","ggfortify", "ggpmisc",
-                   "illuminaio","msa","phyloseq","rstatix","useful","DECIPHER","microbiome")
-
-for (bioconductor in bioconductors){
-  if(!bioconductor %in% installed.packages()){
-    library(BiocManager)
-    BiocManager::install(bioconductor)
-  }else{library(bioconductor, character.only = TRUE)}
-}
-
-##############################################
 #----          install package         ------#
 ##############################################
 packages <- c("ape", "car","cluster","CLME","compositions","cowplot","crayon", "caret","colorspace",
@@ -28,7 +8,7 @@ packages <- c("ape", "car","cluster","CLME","compositions","cowplot","crayon", "
            "Matrix","magrittr","MASS","missForest","nlme","phangorn","plot3D",
            "pheatmap","pkgconfig","plyr","parallel","pscl","plotly","rfUtilities",
            "rlang","randomForest","readxl","RColorBrewer","ROCR","reshape","reshape2",
-           "stringi","S4Vectors","ShortRead","tidyverse","vegan","VGAM") #"venneuler",
+           "stringi","S4Vectors","tidyverse","vegan","VGAM") #"venneuler","ShortRead",
 # version 1
 #for (pack in packs){install.packages(sprintf("%s",pack))}
 # version 2 (better version)
@@ -39,6 +19,36 @@ for (package in packages){
 }
 
 #for (package in packages){library(sprintf("%s",package), character.only = TRUE)}
+
+
+
+##############################################
+#---- install package  by bioconductor ------#
+##############################################
+# 210322
+# install package and reads library is combined
+
+# version 1
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+bioconductors <- c("phyloseq","microbiome","ANCOMBC","Rhtslib","genefilter","dada2","DESeq2", "dplyr","ggpubr","ggfortify", "ggpmisc",
+                   "illuminaio","msa","rstatix","useful","DECIPHER")
+
+# 
+
+
+for (bioconductor in bioconductors){
+  if(!bioconductor %in% installed.packages()){
+    library(BiocManager)
+    BiocManager::install(bioconductor)
+  }else{library(bioconductor, character.only = TRUE)}
+}
+
+
+
+
+
 
 
 ##############################################
@@ -2312,7 +2322,7 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
       p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
       p = p + facet_wrap(~ method, scales="free") + theme_bw() + theme(strip.background = element_blank())# open(1), cross(10), closed(2)
       p = p + scale_color_manual(values = Tableau10)
-      p = p + theme(legend.position = "bottom", 
+      p = p + theme(legend.position = "bottom left", 
                     legend.title = element_blank(),
                     legend.justification="left", 
                     legend.box = "vertical",
@@ -8245,8 +8255,8 @@ Go_DA_volc <- function(project, file_path,files, type,alpha,beta, name,font, hei
     
     dircolors <- c("#1170aa", "grey","#fc7d0b"); names(dircolors) <- c(as.character(basline), "NS", as.character(smvar))
 
-    df.na$ancom[is.na(df.na$ancom)] <- "NS"
-    ancomshape <- c(18,5,5); names(ancomshape) <- c(TRUE, FALSE, "NS")# 16,1,1
+    df.na$ancom[is.na(df.na$ancom)] <- FALSE
+    ancomshape <- c(18,5); names(ancomshape) <- c(TRUE, FALSE)# 16,1,1
     
     
     p1 <- ggplot(data=df.na, aes(x=log2FoldChange, y=-log10(pvalue),colour=deseq2)) + theme_bw() +
@@ -8255,10 +8265,10 @@ Go_DA_volc <- function(project, file_path,files, type,alpha,beta, name,font, hei
       geom_vline(xintercept = -beta,col = "#1170aa", linetype = "dotted", size = 1) + 
       geom_vline(xintercept = beta,col = "#fc7d0b", linetype = "dotted", size = 1) + 
       theme(text = element_text(size=font+8),plot.title = element_text(size=font+8), legend.text=element_text(size=font+8), 
-            legend.position="bottom", legend.title = element_blank())# + theme()
+            legend.position="bottom",legend.justification = "left",legend.box = "vertical") #+ them(legend.title = element_blank())# + theme()
 
     # ancom
-    p1 = p1 + geom_point(aes(shape=ancom), alpha=1, size=font-1.5) + scale_shape_manual(values = ancomshape) + guides(shape = FALSE)
+    p1 = p1 + geom_point(aes(shape=ancom), alpha=1, size=font-1.5) + scale_shape_manual(values = ancomshape) #+ guides(shape = FALSE)
     
 
 
@@ -8355,14 +8365,14 @@ Go_DA_fore <- function(project,file_path, files,type, alpha, beta,font, name, he
     dircolors <- c("#1170aa", "grey","#fc7d0b"); names(dircolors) <- c(as.character(basline), "NS", as.character(smvar))
     
     
-    resSig.top$ancom[is.na(resSig.top$ancom)] <- "NS"
-    ancomshape <- c(18,5,5); names(ancomshape) <- c(TRUE, FALSE, "NS") # 16,1,1
+    resSig.top$ancom[is.na(resSig.top$ancom)] <- FALSE
+    ancomshape <- c(18,5); names(ancomshape) <- c(TRUE, FALSE) # 16,1,1
     
     #dircolors <- c("#f7022a", "#4f86f7","grey"); names(dircolors) <- c("down", "up", "NS")
     
     p1 <- ggplot(resSig.top, aes(x=reorder(taxa,log2FoldChange), y=log2FoldChange, color=deseq2)) + 
       geom_hline(yintercept=0) + geom_point(aes(shape=ancom)) + coord_flip() + theme_classic() + 
-      scale_color_manual(values=dircolors) + scale_shape_manual(values = ancomshape) + guides(shape = "none") +
+      scale_color_manual(values=dircolors) + scale_shape_manual(values = ancomshape) + #guides(shape = "none") +
        #theme_classic() +theme_bw() 
       geom_errorbar(aes(x=taxa, ymin=log2FoldChange-lfcSE, max=log2FoldChange+lfcSE), width=0.2)  + 
       ylim(c(-lims, lims))+ xlab("Taxa") + ylab("log2FoldChange")+

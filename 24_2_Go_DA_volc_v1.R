@@ -49,8 +49,8 @@ Go_DA_volc <- function(project, file_path,files, type,alpha,beta, name,font, hei
     
     dircolors <- c("#1170aa", "grey","#fc7d0b"); names(dircolors) <- c(as.character(basline), "NS", as.character(smvar))
 
-    df.na$ancom[is.na(df.na$ancom)] <- "NS"
-    ancomshape <- c(18,5,5); names(ancomshape) <- c(TRUE, FALSE, "NS")# 16,1,1
+    df.na$ancom[is.na(df.na$ancom)] <- FALSE
+    ancomshape <- c(18,5); names(ancomshape) <- c(TRUE, FALSE)# 16,1,1
     
     
     p1 <- ggplot(data=df.na, aes(x=log2FoldChange, y=-log10(pvalue),colour=deseq2)) + theme_bw() +
@@ -59,10 +59,10 @@ Go_DA_volc <- function(project, file_path,files, type,alpha,beta, name,font, hei
       geom_vline(xintercept = -beta,col = "#1170aa", linetype = "dotted", size = 1) + 
       geom_vline(xintercept = beta,col = "#fc7d0b", linetype = "dotted", size = 1) + 
       theme(text = element_text(size=font+8),plot.title = element_text(size=font+8), legend.text=element_text(size=font+8), 
-            legend.position="bottom", legend.title = element_blank())# + theme()
+            legend.position="bottom",legend.justification = "left",legend.box = "vertical") #+ them(legend.title = element_blank())# + theme()
 
     # ancom
-    p1 = p1 + geom_point(aes(shape=ancom), alpha=1, size=font-1.5) + scale_shape_manual(values = ancomshape) + guides(shape = FALSE)
+    p1 = p1 + geom_point(aes(shape=ancom), alpha=1, size=font-1.5) + scale_shape_manual(values = ancomshape) #+ guides(shape = FALSE)
     
 
 

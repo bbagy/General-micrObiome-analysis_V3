@@ -128,7 +128,7 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
       p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
       p = p + facet_wrap(~ method, scales="free") + theme_bw() + theme(strip.background = element_blank())# open(1), cross(10), closed(2)
       p = p + scale_color_manual(values = Tableau10)
-      p = p + theme(legend.position = "bottom", 
+      p = p + theme(legend.position = "bottom left", 
                     legend.title = element_blank(),
                     legend.justification="left", 
                     legend.box = "vertical",
