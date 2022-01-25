@@ -4271,7 +4271,8 @@ Go_deseq2_fore <- function(project,file_path, files,type, alpha, beta,font, name
     p1 <- ggplot(resSig.top, aes(x=reorder(taxa,log2FoldChange), y=log2FoldChange, color=dir)) + 
       geom_point() + geom_hline(yintercept=0) + coord_flip() + theme_classic() + #theme_classic() +theme_bw() 
       geom_errorbar(aes(x=taxa, ymin=log2FoldChange-lfcSE, max=log2FoldChange+lfcSE), width=0.2)  +  scale_color_manual(values=dircolors) + ylim(c(-lims, lims))+ xlab("Taxa") + ylab("log2FoldChange")+
-      theme(text = element_text(size=font), plot.title = element_text(size=8, hjust = 1)) #hjust =1
+      theme(text = element_text(size=font), plot.title = element_text(size=8, hjust = 1),
+            axis.text.y = element_text(angle=0, vjust=0.5, hjust=1, size=font,face = "italic")) #hjust =1
  
     
     
