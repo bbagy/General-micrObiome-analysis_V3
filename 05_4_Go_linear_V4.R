@@ -24,24 +24,13 @@ Go_linear <- function(df, metaData, project, outcomes, maingroup, orders, name=N
   metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
   metadata <- as.data.frame(t(metadataInput))
 
-
   # out file
-  if (!is.null(maingroup)) {
-    if (!is.null(name)) {
-      pdf(sprintf("%s/4_linear.%s.%s.%s.%s.pdf",out_path, project, maingroup,name,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    } 
-    else {
-      pdf(sprintf("%s/4_linear.%s.%s.%s.pdf",out_path,project, maingroup, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }
-  else {
-    if (!is.null(name)) {
-      pdf(sprintf("%s/4_linear.%s.%s.%s.pdf",out_path,project,name,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    } 
-    else {
-      pdf(sprintf("%s/4_linear.%s.%s.pdf",out_path,project,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }
+  pdf(sprintf("%s/linear.%s.%s.%s.%s.pdf", out_path, 
+              project, 
+              ifelse(is.null(maingroup), "", paste(maingroup, ".", sep = "")), 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
+  
   
 
   my.formula <- y ~ x
@@ -50,8 +39,10 @@ Go_linear <- function(df, metaData, project, outcomes, maingroup, orders, name=N
   # plot
   plotlist <- list()
   for (mvar in rownames(subset(metadata, Go_linear =="yes" & type == "numeric"))) {
-    if (mvar == maingroup){
-      next
+    if (!is.null(maingroup)){
+      if (mvar == maingroup){
+        next
+      }
     }
     # Na 제거
     df[,mvar] <- as.numeric(as.character(df[[mvar]]))
