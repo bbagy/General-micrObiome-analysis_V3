@@ -174,7 +174,8 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
         
         p1 <- ggplot(adiv.cbn, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
           theme_bw() + theme(strip.background = element_blank()) +
-          theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5)) +  
+          theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5),
+          plot.title=element_text(size=9,face="bold")) +  
           # scale_color_brewer(palette=colorset)
           scale_color_manual(values = Tableau10)
         

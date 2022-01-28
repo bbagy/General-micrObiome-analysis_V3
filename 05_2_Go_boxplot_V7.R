@@ -25,22 +25,12 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
 
  
   # out file
-  if (length(facet) >= 1) {
-    if (!is.null(name)) {
-      pdf(sprintf("%s/box.%s.%s.%s.%s.pdf",out_path, project,facet,name,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    } 
-    else {
-      pdf(sprintf("%s/box.%s.%s.%s.pdf",out_path,project,facet, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }
-  else {
-    if (!is.null(name)) {
-      pdf(sprintf("%s/box.%s.%s.%s.pdf",out_path,project,name,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    } 
-    else {
-      pdf(sprintf("%s/box.%s.%s.pdf",out_path,project,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }
+  pdf(sprintf("%s/box.%s.%s%s%s.pdf", out_path, 
+              project, 
+              ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
+  
 
   ## fix factor  and  numeric
   df$etc <- NULL
@@ -129,7 +119,8 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
       
       p1 <- ggplot(adiv.na, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
         theme_bw() + theme(strip.background = element_blank()) +
-        theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5)) +  
+        theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5),
+              plot.title=element_text(size=9,face="bold")) +  
          # scale_color_brewer(palette=colorset)
       scale_color_manual(values = Tableau10)
 

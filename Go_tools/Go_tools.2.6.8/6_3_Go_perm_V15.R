@@ -90,8 +90,8 @@ Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=
         
         # run
         map.pair <- subset(map, map[,mvar] %in% c(co[1,elem],co[2,elem]))
-        
-        if (count(map.pair[,mvar])[1,2] <=2 | count(map.pair[,mvar])[2,2] <=2){
+        # count to table
+        if (table(map.pair[,mvar])[1,2] <=2 | table(map.pair[,mvar])[2,2] <=2){
           next
         }
         

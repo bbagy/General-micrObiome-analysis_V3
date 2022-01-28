@@ -19,21 +19,12 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
   metadata <- as.data.frame(t(metadataInput))
 
 
-  # out file
-  if (!is.null(name)) {
-    if (!is.null(facet)) {
-      pdf(sprintf("%s_%s/pdf/ordi.%s.%s.%s.%s.pdf",project,format(Sys.Date(), "%y%m%d"),project, facet, name, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-      
-    } else{
-      pdf(sprintf("%s_%s/pdf/ordi.%s.%s.%s.pdf",project,format(Sys.Date(), "%y%m%d"),project,name,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }else{
-    if (!is.null(facet)) {
-      pdf(sprintf("%s_%s/pdf/ordi.%s.%s.%s.pdf",project,format(Sys.Date(), "%y%m%d"),project, facet, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }else{
-      pdf(sprintf("%s_%s/pdf/ordi.%s.%s.pdf",project,format(Sys.Date(), "%y%m%d"),project,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }
+ # out file
+  pdf(sprintf("%s/ordi.%s.%s%s%s.pdf", out_path, 
+              project, 
+              ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
 
   
   plotlist <- list()
@@ -128,11 +119,12 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
       p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
       p = p + facet_wrap(~ method, scales="free") + theme_bw() + theme(strip.background = element_blank())# open(1), cross(10), closed(2)
       p = p + scale_color_manual(values = Tableau10)
-      p = p + theme(legend.position = "bottom left", 
+      p = p + theme(legend.position = "bottom", 
                     legend.title = element_blank(),
                     legend.justification="left", 
                     legend.box = "vertical",
                     legend.box.margin = ggplot2::margin(0,0,0,-1,"cm"))
+
       
       
       # ID variation

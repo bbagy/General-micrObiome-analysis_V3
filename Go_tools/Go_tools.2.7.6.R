@@ -1113,22 +1113,12 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
 
  
   # out file
-  if (length(facet) >= 1) {
-    if (!is.null(name)) {
-      pdf(sprintf("%s/box.%s.%s.%s.%s.pdf",out_path, project,facet,name,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    } 
-    else {
-      pdf(sprintf("%s/box.%s.%s.%s.pdf",out_path,project,facet, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }
-  else {
-    if (!is.null(name)) {
-      pdf(sprintf("%s/box.%s.%s.%s.pdf",out_path,project,name,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    } 
-    else {
-      pdf(sprintf("%s/box.%s.%s.pdf",out_path,project,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }
+  pdf(sprintf("%s/box.%s.%s%s%s.pdf", out_path, 
+              project, 
+              ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
+  
 
   ## fix factor  and  numeric
   df$etc <- NULL
@@ -1217,7 +1207,8 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
       
       p1 <- ggplot(adiv.na, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
         theme_bw() + theme(strip.background = element_blank()) +
-        theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5)) +  
+        theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5),
+              plot.title=element_text(size=9,face="bold")) +  
          # scale_color_brewer(palette=colorset)
       scale_color_manual(values = Tableau10)
 
@@ -1985,8 +1976,7 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
     #-----------------------#
     # for group combination #
     #-----------------------#
-    adiv.na[,mvar] <- factor(adiv.na[,mvar], levels = orders)
-    adiv.na[,mvar] <- factor(adiv.na[,mvar])
+    adiv.na[,mvar] <- factor(adiv.na[,mvar], levels = intersect(orders, adiv.na[,mvar]))
     
     group.cbn <- combn(x = levels(adiv.na[,mvar]), m = combination)
     
@@ -2086,7 +2076,8 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
         
         p1 <- ggplot(adiv.cbn, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
           theme_bw() + theme(strip.background = element_blank()) +
-          theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5)) +  
+          theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5),
+          plot.title=element_text(size=9,face="bold")) +  
           # scale_color_brewer(palette=colorset)
           scale_color_manual(values = Tableau10)
         
@@ -2162,22 +2153,13 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
       }
     }
     # out file
-    if (length(facet) >= 1) {
-      if (!is.null(name)) {
-        pdf(sprintf("%s/boxCbn.%s.%s.%s.(cbn=%s).%s.pdf",out_path, project,facet,name,combination,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-      } 
-      else {
-        pdf(sprintf("%s/boxCbn.%s.%s.(cbn=%s).%s.pdf",out_path,project,facet,combination, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-      }
-    }
-    else {
-      if (!is.null(name)) {
-        pdf(sprintf("%s/boxCbn.%s.%s.(cbn=%s).%s.pdf",out_path,project,name,combination,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-      } 
-      else {
-        pdf(sprintf("%s/boxCbn.%s.(cbn=%s).%s.pdf",out_path,project,combination,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-      }
-    }
+    
+    pdf(sprintf("%s/boxCbn.%s.%s%s%s.%s.pdf", out_path, 
+                project, 
+                ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
+                ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+                combination, 
+                format(Sys.Date(), "%y%m%d")), height = height, width = width)
     
     multiplot(plotlist=plotlist, cols=plotCols, rows=plotRows)
     dev.off()
@@ -2205,21 +2187,12 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
   metadata <- as.data.frame(t(metadataInput))
 
 
-  # out file
-  if (!is.null(name)) {
-    if (!is.null(facet)) {
-      pdf(sprintf("%s_%s/pdf/ordi.%s.%s.%s.%s.pdf",project,format(Sys.Date(), "%y%m%d"),project, facet, name, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-      
-    } else{
-      pdf(sprintf("%s_%s/pdf/ordi.%s.%s.%s.pdf",project,format(Sys.Date(), "%y%m%d"),project,name,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }else{
-    if (!is.null(facet)) {
-      pdf(sprintf("%s_%s/pdf/ordi.%s.%s.%s.pdf",project,format(Sys.Date(), "%y%m%d"),project, facet, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }else{
-      pdf(sprintf("%s_%s/pdf/ordi.%s.%s.pdf",project,format(Sys.Date(), "%y%m%d"),project,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }
+ # out file
+  pdf(sprintf("%s/ordi.%s.%s%s%s.pdf", out_path, 
+              project, 
+              ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
 
   
   plotlist <- list()
@@ -2314,11 +2287,12 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
       p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
       p = p + facet_wrap(~ method, scales="free") + theme_bw() + theme(strip.background = element_blank())# open(1), cross(10), closed(2)
       p = p + scale_color_manual(values = Tableau10)
-      p = p + theme(legend.position = "bottom left", 
+      p = p + theme(legend.position = "bottom", 
                     legend.title = element_blank(),
                     legend.justification="left", 
                     legend.box = "vertical",
                     legend.box.margin = ggplot2::margin(0,0,0,-1,"cm"))
+
       
       
       # ID variation
@@ -3060,23 +3034,18 @@ Go_bdivcbn <- function(psIN, metaData, project, orders, distance_metrics,
         
       }
     }
-    
-    # out file
   }
-  if (!is.null(name)) {
-    if (!is.null(facet)) {
-      pdf(sprintf("%s_%s/pdf/ordi.%s.%s.%s.(cbn=%s).%s.pdf",project,format(Sys.Date(), "%y%m%d"),project, facet, name, combination,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-      
-    } else{
-      pdf(sprintf("%s_%s/pdf/ordi.%s.%s.(cbn=%s).%s.pdf",project,format(Sys.Date(), "%y%m%d"),project,name,combination,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }else{
-    if (!is.null(facet)) {
-      pdf(sprintf("%s_%s/pdf/ordi.%s.%s.(cbn=%s).%s.pdf",project,format(Sys.Date(), "%y%m%d"),project, facet, combination,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }else{
-      pdf(sprintf("%s_%s/pdf/ordi.%s.(cbn=%s).%s.pdf",project,format(Sys.Date(), "%y%m%d"),project,combination,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }
+  
+  
+  # out file
+  pdf(sprintf("%s/ordiCbn.%s.%s%s%s.%s.pdf", out_path, 
+              project, 
+              ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              combination, 
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
+  
+  
   multiplot(plotlist=plotlist)
   dev.off()
 }
