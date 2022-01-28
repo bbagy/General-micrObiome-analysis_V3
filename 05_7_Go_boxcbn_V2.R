@@ -223,7 +223,8 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
         }  else{
           p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
           
-          
+          max(table(adiv.cbn[,mvar]))
+          # count or table for number of variable
           
           if (max(count(adiv.cbn[,mvar])$freq) > 250 & max(count(adiv.cbn[,mvar])$freq) < 500){
             dot.size <- dot.size/2
