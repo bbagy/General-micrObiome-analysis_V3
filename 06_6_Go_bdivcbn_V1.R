@@ -50,12 +50,12 @@ Go_bdivcbn <- function(psIN, metaData, project, orders, distance_metrics,
     #-----------------------#
     # for group combination #
     #-----------------------#
-    mapping[,mvar] <- factor(mapping[,mvar], levels = orders)
-    mapping[,mvar] <- factor(mapping[,mvar])
+    mapping[,mvar] <- factor(mapping[,mvar], levels = intersect(orders, mapping[,mvar]))
+
     
     group.cbn <- combn(x = levels(mapping[,mvar]), m = combination)
     
-    print(count(group.cbn))
+    #print(count(group.cbn))
     
     
     
@@ -193,23 +193,18 @@ Go_bdivcbn <- function(psIN, metaData, project, orders, distance_metrics,
         
       }
     }
-    
-    # out file
   }
-  if (!is.null(name)) {
-    if (!is.null(facet)) {
-      pdf(sprintf("%s_%s/pdf/ordi.%s.%s.%s.(cbn=%s).%s.pdf",project,format(Sys.Date(), "%y%m%d"),project, facet, name, combination,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-      
-    } else{
-      pdf(sprintf("%s_%s/pdf/ordi.%s.%s.(cbn=%s).%s.pdf",project,format(Sys.Date(), "%y%m%d"),project,name,combination,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }else{
-    if (!is.null(facet)) {
-      pdf(sprintf("%s_%s/pdf/ordi.%s.%s.(cbn=%s).%s.pdf",project,format(Sys.Date(), "%y%m%d"),project, facet, combination,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }else{
-      pdf(sprintf("%s_%s/pdf/ordi.%s.(cbn=%s).%s.pdf",project,format(Sys.Date(), "%y%m%d"),project,combination,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }
+  
+  
+  # out file
+  pdf(sprintf("%s/ordiCbn.%s.%s%s%s.%s.pdf", out_path, 
+              project, 
+              ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              combination, 
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
+  
+  
   multiplot(plotlist=plotlist)
   dev.off()
 }

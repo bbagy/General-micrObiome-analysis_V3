@@ -74,8 +74,7 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
     #-----------------------#
     # for group combination #
     #-----------------------#
-    adiv.na[,mvar] <- factor(adiv.na[,mvar], levels = orders)
-    adiv.na[,mvar] <- factor(adiv.na[,mvar])
+    adiv.na[,mvar] <- factor(adiv.na[,mvar], levels = intersect(orders, adiv.na[,mvar]))
     
     group.cbn <- combn(x = levels(adiv.na[,mvar]), m = combination)
     
@@ -223,15 +222,15 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
         }  else{
           p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
           
-          max(table(adiv.cbn[,mvar]))
+
           # count or table for number of variable
           
-          if (max(count(adiv.cbn[,mvar])$freq) > 250 & max(count(adiv.cbn[,mvar])$freq) < 500){
+          if (max(table(adiv.cbn[,mvar])) > 250 & max(table(adiv.cbn[,mvar])) < 500){
             dot.size <- dot.size/2
             p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
-          } else  if (max(count(adiv.cbn[,mvar])$freq) < 250 ){
+          } else  if (max(table(adiv.cbn[,mvar])) < 250 ){
             p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
-          }else if(max(count(adiv.cbn[,mvar])$freq) > 500) {
+          }else if(max(table(adiv.cbn[,mvar])) > 500) {
             p1 = p1
           }
           
@@ -251,22 +250,13 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
       }
     }
     # out file
-    if (length(facet) >= 1) {
-      if (!is.null(name)) {
-        pdf(sprintf("%s/boxCbn.%s.%s.%s.(cbn=%s).%s.pdf",out_path, project,facet,name,combination,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-      } 
-      else {
-        pdf(sprintf("%s/boxCbn.%s.%s.(cbn=%s).%s.pdf",out_path,project,facet,combination, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-      }
-    }
-    else {
-      if (!is.null(name)) {
-        pdf(sprintf("%s/boxCbn.%s.%s.(cbn=%s).%s.pdf",out_path,project,name,combination,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-      } 
-      else {
-        pdf(sprintf("%s/boxCbn.%s.(cbn=%s).%s.pdf",out_path,project,combination,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-      }
-    }
+    
+    pdf(sprintf("%s/boxCbn.%s.%s%s%s.%s.pdf", out_path, 
+                project, 
+                ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
+                ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+                combination, 
+                format(Sys.Date(), "%y%m%d")), height = height, width = width)
     
     multiplot(plotlist=plotlist, cols=plotCols, rows=plotRows)
     dev.off()

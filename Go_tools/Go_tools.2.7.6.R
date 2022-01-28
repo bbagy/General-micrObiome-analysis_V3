@@ -2134,14 +2134,15 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
         }  else{
           p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
           
+
+          # count or table for number of variable
           
-          
-          if (max(count(adiv.cbn[,mvar])$freq) > 250 & max(count(adiv.cbn[,mvar])$freq) < 500){
+          if (max(table(adiv.cbn[,mvar])) > 250 & max(table(adiv.cbn[,mvar])) < 500){
             dot.size <- dot.size/2
             p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
-          } else  if (max(count(adiv.cbn[,mvar])$freq) < 250 ){
+          } else  if (max(table(adiv.cbn[,mvar])) < 250 ){
             p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
-          }else if(max(count(adiv.cbn[,mvar])$freq) > 500) {
+          }else if(max(table(adiv.cbn[,mvar])) > 500) {
             p1 = p1
           }
           
@@ -2916,12 +2917,12 @@ Go_bdivcbn <- function(psIN, metaData, project, orders, distance_metrics,
     #-----------------------#
     # for group combination #
     #-----------------------#
-    mapping[,mvar] <- factor(mapping[,mvar], levels = orders)
-    mapping[,mvar] <- factor(mapping[,mvar])
+    mapping[,mvar] <- factor(mapping[,mvar], levels = intersect(orders, mapping[,mvar]))
+
     
     group.cbn <- combn(x = levels(mapping[,mvar]), m = combination)
     
-    print(count(group.cbn))
+    #print(count(group.cbn))
     
     
     
