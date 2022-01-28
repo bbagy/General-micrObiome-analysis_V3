@@ -59,7 +59,7 @@ cat(blue("#--------------------------------------------------------------# \n"))
 cat(blue("#------       General analysis Of microbiome (Go)        ------# \n"))
 cat(blue("#------    Quick statistics and visualization tools      ------# \n"))
 cat(blue("#--------------------------------------------------------------# \n"))
-cat(red("                                      Version: Go_tools.2.7.5 \n"))
+cat(red("                                      Version: Go_tools.2.7.6 \n"))
 cat("                                              Write by Heekuk \n")
 cat(yellow("All the required packages were installed.\n"))
 cat(yellow("All the required packages were loaded.\n"))
@@ -1113,11 +1113,13 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
 
  
   # out file
+  
   pdf(sprintf("%s/box.%s.%s%s%s.pdf", out_path, 
               project, 
-              ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
-              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              ifelse(!is.null(facet), paste(facet, ".", sep = ""), ""), 
+              ifelse(!is.null(name), paste(name, ".", sep = ""), ""), 
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
+  
   
 
   ## fix factor  and  numeric
@@ -2292,7 +2294,6 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
                     legend.justification="left", 
                     legend.box = "vertical",
                     legend.box.margin = ggplot2::margin(0,0,0,-1,"cm"))
-
       
       
       # ID variation
@@ -2449,7 +2450,9 @@ Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=
         # run
         map.pair <- subset(map, map[,mvar] %in% c(co[1,elem],co[2,elem]))
         
-        if (count(map.pair[,mvar])[1,2] <=2 | count(map.pair[,mvar])[2,2] <=2){
+        # count to table
+        map.pair[,mvar] <- factor(map.pair[,mvar])
+        if (table(map.pair[,mvar])[1] <=2 | table(map.pair[,mvar])[2] <=2){
           next
         }
         
@@ -2489,49 +2492,19 @@ Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=
   
   
   # output
-  if (length(adjust) >= 1) {
-    if (!is.null(des)) {
-      if (!is.null(name)) {
-        print(1)
-        write.csv(res.pair, quote = FALSE,col.names = NA,file=sprintf("%s/pair_permanova.adjusted.%s.%s.%s.%s.csv",out_perm, project, des, name, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-      else {
-        write.csv(res.pair, quote = FALSE,col.names = NA,file=sprintf("%s/pair_permanova.adjusted.%s.%s.%s.csv",out_perm, project, des, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-    }
-    else{
-      if (!is.null(name)) {
-        print(2)
-        write.csv(res.pair, quote = FALSE,col.names = NA,file=sprintf("%s/pair_permanova.adjusted.%s.%s.%s.csv",out_perm, project,name, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-      else {
-        write.csv(res.pair, quote = FALSE,col.names = NA,file=sprintf("%s/pair_permanova.adjusted.%s.%s.csv",out_perm, project, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-    }
-  } else{
-    if (!is.null(des)) {
-      if (!is.null(name)) {
-        print(3)
-        write.csv(res.pair, quote = FALSE,col.names = NA,file=sprintf("%s/pair_permanova.%s.%s.%s.%s.csv",out_perm, project, des, name, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-      else {
-        write.csv(res.pair, quote = FALSE,col.names = NA,file=sprintf("%s/pair_permanova.%s.%s.%s.csv",out_perm, project, des, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-    }
-    
-    else{
-      if (!is.null(name)) {
-        print(4)
-        write.csv(res.pair, quote = FALSE,col.names = NA, file=sprintf("%s/pair_permanova.%s.%s.%s.csv",out_perm, project, name, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-      else {
-        write.csv(res.pair, quote = FALSE,col.names = NA,file=sprintf("%s/pair_permanova.%s.%s.csv",out_perm, project, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-    }
-  }
+  write.csv(res.pair, quote = FALSE,col.names = NA, sprintf("%s/pair_permanova.%s.%s%s%s.%s.csv", out_path, 
+              project, 
+              ifelse(is.null(adjust), "", paste(adjust, "adjusted.")), 
+              ifelse(is.null(des), "", paste(des, ".")), 
+              ifelse(is.null(name), "", paste(name, ".")), 
+              format(Sys.Date(), "%y%m%d")),sep="/")
+  
+  
+
   
   return(res.pair)
 }
+
 Go_mirkat<- function(psIN, metaData, project, orders,name=NULL){
   # install bioconductor
   if (!requireNamespace("BiocManager", quietly = TRUE))

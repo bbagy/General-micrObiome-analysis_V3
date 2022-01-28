@@ -91,7 +91,9 @@ Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=
         # run
         map.pair <- subset(map, map[,mvar] %in% c(co[1,elem],co[2,elem]))
         
-        if (count(map.pair[,mvar])[1,2] <=2 | count(map.pair[,mvar])[2,2] <=2){
+        # count to table
+        map.pair[,mvar] <- factor(map.pair[,mvar])
+        if (table(map.pair[,mvar])[1] <=2 | table(map.pair[,mvar])[2] <=2){
           next
         }
         
@@ -131,46 +133,15 @@ Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=
   
   
   # output
-  if (length(adjust) >= 1) {
-    if (!is.null(des)) {
-      if (!is.null(name)) {
-        print(1)
-        write.csv(res.pair, quote = FALSE,col.names = NA,file=sprintf("%s/pair_permanova.adjusted.%s.%s.%s.%s.csv",out_perm, project, des, name, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-      else {
-        write.csv(res.pair, quote = FALSE,col.names = NA,file=sprintf("%s/pair_permanova.adjusted.%s.%s.%s.csv",out_perm, project, des, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-    }
-    else{
-      if (!is.null(name)) {
-        print(2)
-        write.csv(res.pair, quote = FALSE,col.names = NA,file=sprintf("%s/pair_permanova.adjusted.%s.%s.%s.csv",out_perm, project,name, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-      else {
-        write.csv(res.pair, quote = FALSE,col.names = NA,file=sprintf("%s/pair_permanova.adjusted.%s.%s.csv",out_perm, project, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-    }
-  } else{
-    if (!is.null(des)) {
-      if (!is.null(name)) {
-        print(3)
-        write.csv(res.pair, quote = FALSE,col.names = NA,file=sprintf("%s/pair_permanova.%s.%s.%s.%s.csv",out_perm, project, des, name, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-      else {
-        write.csv(res.pair, quote = FALSE,col.names = NA,file=sprintf("%s/pair_permanova.%s.%s.%s.csv",out_perm, project, des, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-    }
-    
-    else{
-      if (!is.null(name)) {
-        print(4)
-        write.csv(res.pair, quote = FALSE,col.names = NA, file=sprintf("%s/pair_permanova.%s.%s.%s.csv",out_perm, project, name, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-      else {
-        write.csv(res.pair, quote = FALSE,col.names = NA,file=sprintf("%s/pair_permanova.%s.%s.csv",out_perm, project, format(Sys.Date(), "%y%m%d"),sep="/"))
-      }
-    }
-  }
+  write.csv(res.pair, quote = FALSE,col.names = NA, sprintf("%s/pair_permanova.%s.%s%s%s.%s.csv", out_path, 
+              project, 
+              ifelse(is.null(adjust), "", paste(adjust, "adjusted.")), 
+              ifelse(is.null(des), "", paste(des, ".")), 
+              ifelse(is.null(name), "", paste(name, ".")), 
+              format(Sys.Date(), "%y%m%d")),sep="/")
+  
+  
+
   
   return(res.pair)
 }
