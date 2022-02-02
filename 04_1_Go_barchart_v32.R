@@ -38,23 +38,12 @@ Go_barchart <- function(psIN, metaData, project, taxanames, data_type, simple = 
   
   
   # logic for out file
-  if (!is.null(facet)) {
-    if (!is.null(name)) {
-      pdf(sprintf("%s_%s/pdf/3_barchart.%s.%s.%s.(%s).%s.pdf",project, format(Sys.Date(), "%y%m%d"),project, facet,name, cutoff, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-    else {
-      pdf(sprintf("%s_%s/pdf/3_barchart.%s.%s.(%s).%s.pdf",project, format(Sys.Date(), "%y%m%d"),project, facet, cutoff, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }
-  else {
-    if (!is.null(name)) {
-      pdf(sprintf("%s_%s/pdf/3_barchart_simple.%s.%s.(%s).%s.pdf",project, format(Sys.Date(), "%y%m%d"),project,name,cutoff, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }      else {
-      pdf(sprintf("%s_%s/pdf/3_barchart.%s.(%s).%s.pdf",project, format(Sys.Date(), "%y%m%d"),project,cutoff, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }
-  
-
+  pdf(sprintf("%s/barchart.%s.%s%s(%s).%s.pdf", out_path, 
+              project, 
+              ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              cutoff,
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
   
   # order by bdiv
 

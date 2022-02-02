@@ -145,7 +145,6 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
       form <-as.formula(sprintf("~ %s + %s", mvar, paste(setdiff(adjust, "SampleType"), collapse="+")))
       print(form)
       dds = phyloseq_to_deseq2(psIN.cb, form)
-      
     }    else {
       dds = phyloseq_to_deseq2(psIN.cb, as.formula(sprintf("~ %s", mvar)))
       print(sprintf("~ %s", mvar))
@@ -184,9 +183,13 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
     
     res.ancom.df <- as.data.frame(res.ancom)
     colnames(res.ancom.df) <- gsub(mvar,"", colnames(res.ancom.df))
-    colnames(res.ancom.df)<-c("best","se","W","pval","qval","diff_abn")
+
     
-    
+    if(!is.null(adjust)){
+      names(res.ancom.df)[length(names(res.ancom.df))]<-"diff_abn" 
+    }else{
+      colnames(res.ancom.df)<-c("best","se","W","pval","qval","diff_abn")
+    }
     
 
     # calculation

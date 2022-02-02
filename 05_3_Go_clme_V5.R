@@ -10,9 +10,8 @@
 
 Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
     
-    if(!is.null(dev.list())) dev.off()
+  if(!is.null(dev.list())) dev.off()
     
-  
   alpha_metrics = c("Chao1","Shannon")
   
   # colorset = "Dark2" # Dark1 Set1 Paired
@@ -33,14 +32,13 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
   metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
   metadata <- as.data.frame(t(metadataInput))
   
-  if (length(name) == 1) {
-    pdf(sprintf("%s_%s/pdf/5_clme.%s.%s.(%s.%s).%s.pdf",project, format(Sys.Date(), "%y%m%d"),project,name,node,decreasing, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-  }
-  else {
-    pdf(sprintf("%s_%s/pdf/5_clme.%s.(%s.%s).%s.pdf",project, format(Sys.Date(), "%y%m%d"),project,node,decreasing, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-  }
-  
-  
+    # logic for out file
+  pdf(sprintf("%s/clme.%s.%s(%s.%s).%s.pdf", out_path, 
+              project, 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              node,
+              decreasing,
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
   
   # adiv
   adiv <- estimate_richness(psIN, measures=alpha_metrics)
@@ -99,7 +97,12 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
         clme.globalp <- paste("CLME P=",clme.globalp(clme.sum))
         
         # plot
-        p <- ggplot(adiv, mapping = aes_string(x=timepoint, y=am, color=timepoint, group=paired)) + geom_line(color="grey") + geom_point(size = 1.25) + xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + ggtitle(sprintf("%s \n (%s) ", mvar, clme.globalp)) + scale_color_manual(values = Tableau10) + theme_bw() + theme(strip.background = element_blank()) +theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" )
+        p <- ggplot(adiv, mapping = aes_string(x=timepoint, y=am, color=timepoint, group=paired)) + geom_line(color="grey") + 
+          geom_point(size = 1.25) + xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + 
+          ggtitle(sprintf("%s \n (%s) ", mvar, clme.globalp))  + 
+          theme_bw() + theme(strip.background = element_blank()) + 
+          theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" )+ 
+          scale_color_manual(values = Tableau10)
         
         if (length(ID) == 1) {
           p= p + geom_text_repel(aes_string(label = ID), size = 2)
@@ -129,7 +132,11 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
           clme.globalp <- paste("CLME P=",clme.globalp(clme.sum))
           
           # plot
-          p <- ggplot(adiv[adiv[,mvar]==des,], mapping = aes_string(x=timepoint, y=am, color=timepoint, group=paired)) + geom_line(color="grey") + geom_point(size = 1.25) + xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + ggtitle(sprintf("%s-%s \n (%s) ", mvar, des, clme.globalp))  + scale_color_brewer(palette=Tableau10)+theme_bw() +theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" )
+          p <- ggplot(adiv[adiv[,mvar]==des,], mapping = aes_string(x=timepoint, y=am, color=timepoint, group=paired)) + 
+            geom_line(color="grey") + geom_point(size = 1.25) + xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + 
+            ggtitle(sprintf("%s-%s \n (%s) ", mvar, des, clme.globalp))   + theme_bw() +
+            theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" ) +
+            scale_color_manual(values = Tableau10) #+ scale_color_brewer(palette=Tableau10)
           
           if (length(ID) == 1) {
             p= p + geom_text_repel(aes_string(label = ID), size = 2)

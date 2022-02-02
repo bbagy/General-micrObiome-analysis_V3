@@ -17,14 +17,11 @@ Go_qq <- function(psIN, project, alpha_metrics, name, height, width){
   if(!file_test("-d", out_path)) dir.create(out_path)
   
   
-  # out file
-  if (length(name) == 1) {
-    pdf(sprintf("%s_%s/pdf/2_QQ.%s.%s.%s.pdf",project,format(Sys.Date(), "%y%m%d"), project,name,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-  } 
-  else {
-    pdf(sprintf("%s_%s/pdf/2_QQ.%s.%s.pdf",project,format(Sys.Date(), "%y%m%d"), project, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-  }
-  
+      # logic for out file
+  pdf(sprintf("%s/QQplot.%s%s.%s.pdf", out_path, 
+              project, 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
   
   # 1st adiv table
   mapping.sel <- data.frame(sample_data(psIN))

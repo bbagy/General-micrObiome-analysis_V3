@@ -25,14 +25,11 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
 
  
   # out file
-  
   pdf(sprintf("%s/box.%s.%s%s%s.pdf", out_path, 
               project, 
-              ifelse(!is.null(facet), paste(facet, ".", sep = ""), ""), 
-              ifelse(!is.null(name), paste(name, ".", sep = ""), ""), 
+              ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
-  
-  
 
   ## fix factor  and  numeric
   df$etc <- NULL

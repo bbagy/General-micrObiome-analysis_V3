@@ -13,6 +13,12 @@ Go_mirkat<- function(psIN, metaData, project, orders,name=NULL){
   }
   
   
+
+  # install package from install_github
+  github <- c("GLMMMiRKAT")
+  if(!github %in% installed.packages()){
+    install_github("hk1785/GLMM-MiRKAT", force=T)
+  }else{library(package, character.only = TRUE)}
   # install package 
   packages <- c("data.table","CompQuadForm","devtools","ecodist","GUniFrac","GLMMMiRKAT","lme4","MASS","Matrix","MiRKAT","permute") 
   for (package in packages){
@@ -22,12 +28,7 @@ Go_mirkat<- function(psIN, metaData, project, orders,name=NULL){
   }
   
   
-  # install package from install_github
-  github <- c("GLMMMiRKAT")
-  if(!github %in% installed.packages()){
-    install_github("hk1785/GLMM-MiRKAT", force=T)
-  }else{library(package, character.only = TRUE)}
-  
+
   #install.packages("data.table", version = "1.13.0")
   
   
@@ -75,7 +76,7 @@ Go_mirkat<- function(psIN, metaData, project, orders,name=NULL){
     # list of the combination
     group.cbn <- combn(x = levels(mapping[,mvar]), m = 2)
     
-    print(count(group.cbn))
+    #print(count(group.cbn))
     
     group_comparisons <- {}
     for(i in 1:ncol(group.cbn)){

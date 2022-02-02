@@ -91,9 +91,8 @@ Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=
         # run
         map.pair <- subset(map, map[,mvar] %in% c(co[1,elem],co[2,elem]))
         
-        # count to table
-        map.pair[,mvar] <- factor(map.pair[,mvar])
-        if (table(map.pair[,mvar])[1] <=2 | table(map.pair[,mvar])[2] <=2){
+# count to table
+        if (table(map.pair[,mvar])[co[1,elem]] <=2 | table(map.pair[,mvar])[co[2,elem]] <=2){
           next
         }
         
@@ -133,15 +132,13 @@ Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=
   
   
   # output
-  write.csv(res.pair, quote = FALSE,col.names = NA, sprintf("%s/pair_permanova.%s.%s%s%s.%s.csv", out_path, 
+    write.csv(res.pair, quote = FALSE,col.names = NA, sprintf("%s/pair_permanova.%s.%s%s%s%s.csv", out_perm, 
               project, 
-              ifelse(is.null(adjust), "", paste(adjust, "adjusted.")), 
-              ifelse(is.null(des), "", paste(des, ".")), 
-              ifelse(is.null(name), "", paste(name, ".")), 
+              ifelse(is.null(adjust), "", paste(adjust, "adjusted.", sep = "")), 
+              ifelse(is.null(des), "", paste(des, ".", sep = "")), 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
               format(Sys.Date(), "%y%m%d")),sep="/")
   
-  
 
-  
   return(res.pair)
 }

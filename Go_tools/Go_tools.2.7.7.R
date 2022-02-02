@@ -59,7 +59,7 @@ cat(blue("#--------------------------------------------------------------# \n"))
 cat(blue("#------       General analysis Of microbiome (Go)        ------# \n"))
 cat(blue("#------    Quick statistics and visualization tools      ------# \n"))
 cat(blue("#--------------------------------------------------------------# \n"))
-cat(red("                                      Version: Go_tools.2.7.6 \n"))
+cat(red("                                      Version: Go_tools.2.7.7 \n"))
 cat("                                              Write by Heekuk \n")
 cat(yellow("All the required packages were installed.\n"))
 cat(yellow("All the required packages were loaded.\n"))
@@ -1278,9 +1278,8 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
 
 Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
     
-    if(!is.null(dev.list())) dev.off()
+  if(!is.null(dev.list())) dev.off()
     
-  
   alpha_metrics = c("Chao1","Shannon")
   
   # colorset = "Dark2" # Dark1 Set1 Paired
@@ -1366,7 +1365,12 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
         clme.globalp <- paste("CLME P=",clme.globalp(clme.sum))
         
         # plot
-        p <- ggplot(adiv, mapping = aes_string(x=timepoint, y=am, color=timepoint, group=paired)) + geom_line(color="grey") + geom_point(size = 1.25) + xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + ggtitle(sprintf("%s \n (%s) ", mvar, clme.globalp)) + scale_color_manual(values = Tableau10) + theme_bw() + theme(strip.background = element_blank()) +theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" )
+        p <- ggplot(adiv, mapping = aes_string(x=timepoint, y=am, color=timepoint, group=paired)) + geom_line(color="grey") + 
+          geom_point(size = 1.25) + xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + 
+          ggtitle(sprintf("%s \n (%s) ", mvar, clme.globalp))  + 
+          theme_bw() + theme(strip.background = element_blank()) + 
+          theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" )+ 
+          scale_color_manual(values = Tableau10)
         
         if (length(ID) == 1) {
           p= p + geom_text_repel(aes_string(label = ID), size = 2)
@@ -1396,7 +1400,11 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
           clme.globalp <- paste("CLME P=",clme.globalp(clme.sum))
           
           # plot
-          p <- ggplot(adiv[adiv[,mvar]==des,], mapping = aes_string(x=timepoint, y=am, color=timepoint, group=paired)) + geom_line(color="grey") + geom_point(size = 1.25) + xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + ggtitle(sprintf("%s-%s \n (%s) ", mvar, des, clme.globalp))  + scale_color_brewer(palette=Tableau10)+theme_bw() +theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" )
+          p <- ggplot(adiv[adiv[,mvar]==des,], mapping = aes_string(x=timepoint, y=am, color=timepoint, group=paired)) + 
+            geom_line(color="grey") + geom_point(size = 1.25) + xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + 
+            ggtitle(sprintf("%s-%s \n (%s) ", mvar, des, clme.globalp))   + theme_bw() +
+            theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" ) +
+            scale_color_manual(values = Tableau10) #+ scale_color_brewer(palette=Tableau10)
           
           if (length(ID) == 1) {
             p= p + geom_text_repel(aes_string(label = ID), size = 2)
@@ -2433,7 +2441,7 @@ Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=
         map.pair <- subset(map, map[,mvar] %in% c(co[1,elem],co[2,elem]))
         
 # count to table
-        if (table(map.pair[,mvar])[1] <=2 | table(map.pair[,mvar])[2] <=2){
+        if (table(map.pair[,mvar])[co[1,elem]] <=2 | table(map.pair[,mvar])[co[2,elem]] <=2){
           next
         }
         

@@ -18,8 +18,7 @@ Go_DA_fore <- function(project,file_path, files,type, alpha, beta,font, name, he
   if(!file_test("-d", out)) dir.create(out)
   out_path <- file.path(sprintf("%s_%s/pdf",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_path)) dir.create(out_path)
-  out_deseq2 <- file.path(sprintf("%s_%s/table/deseq2",project, format(Sys.Date(), "%y%m%d"))) 
-  if(!file_test("-d", out_deseq2)) dir.create(out_deseq2)
+  
   
   # add input files
   path <- file_path
@@ -60,6 +59,7 @@ Go_DA_fore <- function(project,file_path, files,type, alpha, beta,font, name, he
     # save top for fishtaco
     if(type == "function"){
       top.ko <- resSig.top$KO
+      #out_deseq2 <- file.path(sprintf("%s_%s/table/deseq2",project, format(Sys.Date(), "%y%m%d"))); if(!file_test("-d", out_deseq2)) dir.create(out_deseq2)
       #write.csv(top.ko, quote = FALSE,col.names = NA,file=sprintf("%s/%s.%s.VS.%s.%s.%s.%s.csv",out_deseq2,mvar, basline, smvar, project,format(Sys.Date(), "%y%m%d"),"Forfishtaco",sep="/"))
     }else{
     }

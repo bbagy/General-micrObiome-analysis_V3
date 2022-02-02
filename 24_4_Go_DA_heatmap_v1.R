@@ -1,6 +1,6 @@
 #' A Go_deseq2_heat
 #' 
-Go_deseq2_heat <- function(df, project, data_type, facet,groupby,font, alpha,beta, orders, name, height, width){
+Go_DA_heat <- function(df, project, data_type, facet,groupby,font, alpha,beta, orders, name, height, width){
     
   if(!is.null(dev.list())) dev.off()
    
@@ -11,7 +11,7 @@ Go_deseq2_heat <- function(df, project, data_type, facet,groupby,font, alpha,bet
   if(!file_test("-d", out_path)) dir.create(out_path)
   
   # out file
-  pdf(sprintf("%s/deseq2.heatmap.%s.%s%s(%s.%s).%s.pdf", out_path, 
+  pdf(sprintf("%s/DA.heatmap.%s.%s%s(%s.%s).%s.pdf", out_path, 
               project, 
               ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 
@@ -21,7 +21,18 @@ Go_deseq2_heat <- function(df, project, data_type, facet,groupby,font, alpha,bet
   
   
   resSig <- as.data.frame(subset(df, padj < alpha)); resSig <- resSig[order(resSig$log2FoldChange),]
-  resSig.top <- as.data.frame(subset(resSig, abs(resSig$log2FoldChange) > beta))
+  
+  
+  if (length(subset(resSig.top, ancom == TRUE)) > 1){
+    print(sprintf("Combination Deseq2(%s) and Ancom(%s)",length(resSig.top$deseq2),length(subset(resSig.top, ancom == TRUE))))
+    resSig.top <- as.data.frame(subset(resSig, abs(resSig$log2FoldChange) > beta))
+    resSig.top <- subset(resSig.top, ancom == TRUE)
+    
+  } else{
+    print(sprintf("Use only Deseq2(%s)",length(resSig.top$deseq2)))
+    resSig.top <- as.data.frame(subset(resSig, abs(resSig$log2FoldChange) > beta))
+  }
+  
   #print("c")
   #if (length(unique(resSig$smvar)) >=2 ){
   
