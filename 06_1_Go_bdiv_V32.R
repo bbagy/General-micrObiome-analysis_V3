@@ -123,7 +123,8 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
                     legend.title = element_blank(),
                     legend.justification="left", 
                     legend.box = "vertical",
-                    legend.box.margin = ggplot2::margin(0,0,0,-1,"cm"))
+                    legend.box.margin = ggplot2::margin(0,0,0,-1,"cm"),
+                    plot.title=element_text(size=9,face="bold"))
       
       
       # ID variation

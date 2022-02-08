@@ -2283,7 +2283,8 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
                     legend.title = element_blank(),
                     legend.justification="left", 
                     legend.box = "vertical",
-                    legend.box.margin = ggplot2::margin(0,0,0,-1,"cm"))
+                    legend.box.margin = ggplot2::margin(0,0,0,-1,"cm"),
+                    plot.title=element_text(size=9,face="bold"))
       
       
       # ID variation
@@ -8347,8 +8348,8 @@ Go_DA_heat <- function(df, project, data_type, facet,groupby,font, alpha,beta, o
   resSig <- as.data.frame(subset(df, padj < alpha)); resSig <- resSig[order(resSig$log2FoldChange),]
   
   
-  if (length(subset(resSig.top, ancom == TRUE)) > 1){
-    print(sprintf("Combination Deseq2(%s) and Ancom(%s)",length(resSig.top$deseq2),length(subset(resSig.top, ancom == TRUE))))
+  if (length(subset(resSig, ancom == TRUE)) > 1){
+    print(sprintf("Combination Deseq2(%s) and Ancom(%s)",length(resSig$deseq2),length(subset(resSig, ancom == TRUE))))
     resSig.top <- as.data.frame(subset(resSig, abs(resSig$log2FoldChange) > beta))
     resSig.top <- subset(resSig.top, ancom == TRUE)
     
@@ -8367,7 +8368,7 @@ Go_DA_heat <- function(df, project, data_type, facet,groupby,font, alpha,beta, o
         resSig.top$smvar <- factor(resSig.top$smvar, levels = orders)
         #resSig.top$des <- factor(resSig.top$des, levels = orders)
         if (length(unique(resSig.top$smvar)) <= 1) 
-          next
+          #next
         resSig.top$smvar <- factor(resSig.top$smvar, levels = orders)
         #resSig.top$des <- factor(resSig.top$des, levels = orders)
       } else{
