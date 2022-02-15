@@ -86,7 +86,7 @@ Go_deseq2_fore <- function(project,file_path, files,type, alpha, beta,font, name
     if(type == "taxonomy" | type == "taxanomy"){
       p1 <- p1 + scale_x_discrete(breaks = as.character(resSig$taxa), labels = sprintf("%s__%s__%s",as.character(resSig$Phylum),as.character(resSig$Family), as.character(resSig$ShortName))) 
     }else if(type == "function"){
-      p1 <- p1 + scale_x_discrete(breaks = as.character(resSig$taxa), labels = sprintf("%s__%s",as.character(resSig$Path.des),as.character(resSig$KO.des))) 
+      p1 <- p1 + scale_x_discrete(breaks = as.character(resSig$taxa), labels = sprintf("%s",as.character(resSig$KOName))) 
     }else if(type == "bacmet" ){
       p1 <- p1 + scale_x_discrete(breaks = as.character(resSig$taxa), labels = sprintf("%s",as.character(resSig$ShortName))) 
     }

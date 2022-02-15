@@ -1076,7 +1076,7 @@ Go_adiv <- function(psIN, project, alpha_metrics){
 #'
 
 Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
-                        statistics = "yes", parametric= "no", star="no",
+                        statistics = "yes", parametric= "no", star="no",ylim =NULL,
                         title= NULL, facet= NULL, paired=NULL, name= NULL, 
                         xanlgle=90,  height, width, plotCols, plotRows){
 
@@ -1226,18 +1226,29 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
         dot.size = 1.5
         box.tickness = 0.5
       }
-      
+
+      # y axis limit      
+      if(oc == "Shannon"){
+        if(!is.null(ylim)){
+          p1 = p1 + ylim(ylim[1] , ylim[2])
+        }else(
+          p1=p1
+        )
+      }
+
       # paired plot type
-      
        if (!is.null(paired)) {
-        #p1 = p1 + geom_point(size = 1) 
+        p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
+        p1 = p1 + geom_point(aes_string(shape=paired))  #scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
         p1 = p1 + geom_line(aes_string(group=paired), color="grey50", size=0.3) 
-        p1 = p1 + geom_point(aes_string(shape=paired)) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
-        p1 = p1 + guides(color = FALSE, size = FALSE) + theme(legend.title = element_blank(), 
+        p1 = p1 + guides(color = FALSE, size = FALSE, shape=FALSE) + theme(legend.title = element_blank(), 
                                                               legend.position="bottom", 
                                                               legend.justification="left",
                                                               legend.box.margin = ggplot2::margin(0,0,0,-1,"cm")) 
-      }  else{
+        if (dim(adiv.na)[1] < 500){
+          p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
+        }
+      } else{
         p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
         
         if (dim(adiv.na)[1] < 500){
@@ -1911,7 +1922,7 @@ Go_dualYplot <- function(df, TaxTab, metaData, project, orders=NULL, Box, Line1,
 #'
 
 Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
-                        statistics = "yes", parametric= "no", star="no",
+                        statistics = "yes", parametric= "no", star="no",ylim =NULL,
                         title= NULL, facet= NULL, paired=NULL, name= NULL, 
                         xanlgle=90, combination, height, width, plotCols, plotRows){
 
@@ -2119,16 +2130,23 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
           box.tickness = 0.5
         }
         
-        
+        if(oc == "Shannon"){
+          if(!is.null(ylim)){
+            p1 = p1 + ylim(ylim[1] , ylim[2])
+          }else(
+            p1=p1
+          )
+        }
         # paired plot type
         if (!is.null(paired)) {
           #p1 = p1 + geom_point(size = 1) 
+          p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
+          p1 = p1 + geom_point(aes_string(shape=paired))  #scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
           p1 = p1 + geom_line(aes_string(group=paired), color="grey50", size=0.3) 
-          p1 = p1 + geom_point(aes_string(shape=paired)) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
-          p1 = p1 + guides(color = FALSE, size = FALSE) + theme(legend.title = element_blank(), 
-                                                                legend.position="bottom", 
-                                                                legend.justification="left",
-                                                                legend.box.margin = ggplot2::margin(0,0,0,-1,"cm")) 
+          p1 = p1 + guides(color = FALSE, size = FALSE, shape=FALSE) + theme(legend.title = element_blank(), 
+                                                                             legend.position="bottom", 
+                                                                             legend.justification="left",
+                                                                             legend.box.margin = ggplot2::margin(0,0,0,-1,"cm")) 
         }  else{
           p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
           

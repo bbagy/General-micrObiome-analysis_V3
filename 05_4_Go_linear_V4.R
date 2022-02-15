@@ -10,10 +10,7 @@ Go_linear <- function(df, metaData, project, outcomes, maingroup, orders, name=N
     
   if(!is.null(dev.list())) dev.off()
     
-  colorset = "Tableau10" # Dark1 Set1 Dark2 Tableau10
-  Tableau10 = c("#1170aa", "#fc7d0b",  "#76B7B2", "#E15759","#59A14F","#EDC948", "#B07AA1", "#FF9DA7", "#9C755F", "#BABOAC") 
-  
-  
+
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out)) dir.create(out)
@@ -90,7 +87,7 @@ Go_linear <- function(df, metaData, project, outcomes, maingroup, orders, name=N
       
      p <- p + theme_classic() + geom_point(size = 0.5) + 
        # scale_colour_brewer(palette = colorset) + 
-       scale_color_manual(values = Tableau10) +
+       scale_color_manual(values = mycols) +
         geom_smooth(method = my.method, formula = my.formula, linetype="solid", fill="lightgrey", se=T, size=0.5 ) + 
         ggtitle(sprintf("%s with %s", mvar, outcomes[i])) + theme(title=element_text(size=10)) + labs(x = NULL)+
         theme(title=element_text(size=10),

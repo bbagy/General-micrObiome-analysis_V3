@@ -96,9 +96,23 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
         
         clme.globalp <- paste("CLME P=",clme.globalp(clme.sum))
         
+        
+        # plot design
+        if (height*width <= 6){
+          dot.size = 0.6
+          line.tickness = 0.3
+        }else if (height*width > 6 & height*width < 10){
+          dot.size = 0.9
+          line.tickness = 0.4
+        }else{
+          dot.size = 1.3
+          line.tickness = 0.5
+        }
+        
         # plot
-        p <- ggplot(adiv, mapping = aes_string(x=timepoint, y=am, color=timepoint, group=paired)) + geom_line(color="grey") + 
-          geom_point(size = 1.25) + xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + 
+        p <- ggplot(adiv, mapping = aes_string(x=timepoint, y=am, color=timepoint, group=paired)) + 
+          geom_line(color="grey",size=line.tickness) + 
+          geom_point(alpha = 0.8, size = dot.size) + ylab(sprintf("%s Index\n", am)) + 
           ggtitle(sprintf("%s \n (%s) ", mvar, clme.globalp))  + 
           theme_bw() + theme(strip.background = element_blank()) + 
           theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" )+ 
@@ -133,7 +147,8 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
           
           # plot
           p <- ggplot(adiv[adiv[,mvar]==des,], mapping = aes_string(x=timepoint, y=am, color=timepoint, group=paired)) + 
-            geom_line(color="grey") + geom_point(size = 1.25) + xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + 
+            geom_line(color="grey",size=line.tickness) + geom_point(alpha = 0.8, size = dot.size) + 
+            xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + 
             ggtitle(sprintf("%s-%s \n (%s) ", mvar, des, clme.globalp))   + theme_bw() +
             theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" ) +
             scale_color_manual(values = Tableau10) #+ scale_color_brewer(palette=Tableau10)

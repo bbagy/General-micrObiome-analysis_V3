@@ -336,10 +336,11 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
       }
       
       #--- give simple name to res---#
-      headers <- vector(dim(res)[2], mode="character")
-      for (i in 1:dim(res)[1]) {
-        headers[i] <- paste("ASV", i, sep="_")
-      }
+      #headers <- vector(dim(res)[2], mode="character")
+      #for (i in 1:dim(res)[1]) {
+      #  headers[i] <- paste("ASV", i, sep="_")
+      #}
+      headers <- rownames(res)
       
       
       res$taxa <- headers

@@ -27,6 +27,9 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
 
   
+  
+
+  
   plotlist <- list()
   for (mvar in rownames(subset(metadata, Go_bdiv =="yes"))) {
     mapping <- data.frame(sample_data(psIN))

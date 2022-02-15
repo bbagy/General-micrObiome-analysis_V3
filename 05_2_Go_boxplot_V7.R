@@ -2,14 +2,12 @@
 #'
 
 Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
-                        statistics = "yes", parametric= "no", star="no",
+                        statistics = "yes", parametric= "no", star="no",ylim =NULL,
                         title= NULL, facet= NULL, paired=NULL, name= NULL, 
                         xanlgle=90,  height, width, plotCols, plotRows){
 
   if(!is.null(dev.list())) dev.off()
-  # plot color
-  # colorset = "Dark2" # Dark2 Set1 Paired
-  Tableau10 = c("#1170aa", "#fc7d0b",  "#76B7B2", "#E15759","#59A14F","#EDC948", "#B07AA1", "#FF9DA7", "#9C755F", "#BABOAC") 
+
   
 
   # out dir
@@ -121,7 +119,7 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
         theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5),
               plot.title=element_text(size=9,face="bold")) +  
          # scale_color_brewer(palette=colorset)
-      scale_color_manual(values = Tableau10)
+      scale_color_manual(values = mycols)
 
       
       
@@ -152,18 +150,29 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
         dot.size = 1.5
         box.tickness = 0.5
       }
-      
+
+      # y axis limit      
+      if(oc == "Shannon"){
+        if(!is.null(ylim)){
+          p1 = p1 + ylim(ylim[1] , ylim[2])
+        }else(
+          p1=p1
+        )
+      }
+
       # paired plot type
-      
        if (!is.null(paired)) {
-        #p1 = p1 + geom_point(size = 1) 
+        p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
+        p1 = p1 + geom_point(aes_string(shape=paired))  #scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
         p1 = p1 + geom_line(aes_string(group=paired), color="grey50", size=0.3) 
-        p1 = p1 + geom_point(aes_string(shape=paired)) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
-        p1 = p1 + guides(color = FALSE, size = FALSE) + theme(legend.title = element_blank(), 
+        p1 = p1 + guides(color = FALSE, size = FALSE, shape=FALSE) + theme(legend.title = element_blank(), 
                                                               legend.position="bottom", 
                                                               legend.justification="left",
                                                               legend.box.margin = ggplot2::margin(0,0,0,-1,"cm")) 
-      }  else{
+        if (dim(adiv.na)[1] < 500){
+          p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
+        }
+      } else{
         p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
         
         if (dim(adiv.na)[1] < 500){
