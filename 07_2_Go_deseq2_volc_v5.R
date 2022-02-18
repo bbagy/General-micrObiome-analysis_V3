@@ -57,7 +57,7 @@ Go_deseq2_volc <- function(project, file_path,files, type,alpha,beta, name,font,
     if(type == "taxonomy" | type == "taxanomy" |type == "bacmet" ){
       p1 <- p1 +  geom_text_repel(aes(label=ifelse(ShortName != "NA" & df.na$padj < alpha & abs(df.na$log2FoldChange) > beta, as.character(ShortName),'')), size=font, segment.alpha = 0.25, fontface="italic")
     }else if(type == "function"){
-      p1 <- p1 +  geom_text_repel(aes(label=ifelse(KOName != "NA" & df.na$padj < alpha & abs(df.na$log2FoldChange) > beta, as.character(KOName),'')), size=font)
+      p1 <- p1 +  geom_text_repel(aes(label=ifelse(ShortName != "NA" & df.na$padj < alpha & abs(df.na$log2FoldChange) > beta, as.character(ShortName),'')), size=font)
     }
     
     if(!is.null(df.na$des)){

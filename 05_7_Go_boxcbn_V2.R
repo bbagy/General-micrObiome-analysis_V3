@@ -7,10 +7,6 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
                         xanlgle=90, combination, height, width, plotCols, plotRows){
 
   if(!is.null(dev.list())) dev.off()
-  # plot color
-  # colorset = "Dark2" # Dark2 Set1 Paired
-  Tableau10 = c("#1170aa", "#fc7d0b",  "#76B7B2", "#E15759","#59A14F","#EDC948", "#B07AA1", "#FF9DA7", "#9C755F", "#BABOAC") 
-  
 
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
@@ -177,7 +173,7 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
           theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5),
           plot.title=element_text(size=9,face="bold")) +  
           # scale_color_brewer(palette=colorset)
-          scale_color_manual(values = Tableau10)
+          scale_color_manual(values = mycols)
         
         
         
@@ -221,12 +217,10 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
         if (!is.null(paired)) {
           #p1 = p1 + geom_point(size = 1) 
           p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
-          p1 = p1 + geom_point(aes_string(shape=paired))  #scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
-          p1 = p1 + geom_line(aes_string(group=paired), color="grey50", size=0.3) 
-          p1 = p1 + guides(color = FALSE, size = FALSE, shape=FALSE) + theme(legend.title = element_blank(), 
-                                                                             legend.position="bottom", 
-                                                                             legend.justification="left",
-                                                                             legend.box.margin = ggplot2::margin(0,0,0,-1,"cm")) 
+          p1 = p1 + geom_point(aes_string(fill=mvar,group=paired),alpha = 0.8, size = dot.size, position = position_dodge(0.3),show.legend = F)  #scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
+          p1 = p1 + geom_line(aes_string(group=paired), color="grey50", size=0.3,position = position_dodge(0.3)) 
+          p1 = p1  + theme(legend.title = element_blank(), legend.position="bottom", legend.justification="left",legend.box.margin = ggplot2::margin(0,0,0,-1,"cm")) 
+                                                                 
         }  else{
           p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
           
@@ -249,9 +243,9 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
         if (length(facet) >= 1) {
           facetCol <- length(unique(adiv[,facet]))
           p1 = p1 + facet_wrap(as.formula(sprintf("~ %s" , paste(setdiff(facet, "SocpleType"), collapse="+"))), scales="free_x", ncol = facetCol) 
-          
+          p1 = p1 + guides(color = "none", size = "none", shape= "none")
         } else {
-          p1 = p1 
+          p1 = p1 + guides(color = "none", size = "none", shape= "none")
         }
         
         plotlist[[length(plotlist)+1]] <- p1 

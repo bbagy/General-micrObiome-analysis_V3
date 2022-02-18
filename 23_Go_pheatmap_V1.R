@@ -1,7 +1,7 @@
 
 
 Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL, name=NULL,
-                        show_rownames = T,show_colnames = F,
+                        show_rownames = T,show_colnames = F,type,
                         cluster_rows = T,cluster_cols = T, 
                         width){
   # BiocManager::install("ComplexHeatmap")
@@ -61,28 +61,66 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
   matrix <- matrix[,colSums(is.na(matrix))<nrow(matrix)]
   colnames(matrix) <- gsub("X","",colnames(matrix))
   
-  taxaTab <- data.frame(tax_table(ps.rel.sel)[,"Species"])
+  if(type == "taxonomy" | type == "taxanomy" ){
+    taxaTab <- data.frame(tax_table(ps.rel.sel)[,"Species"])
+  }else if(type == "function"){
+    taxaTab <- data.frame(tax_table(ps.rel.sel)[,"Path.des"])
+  }
+  
+ 
   
   
   
   # map 정리
   mapping <- data.frame(sample_data(ps.rel.sel));dim(mapping)
-  sel <- intersect(rownames(mapping), colnames(matrix)); head(sel, "3")
+  
+  tt <- try(sel <- intersect(rownames(mapping), colnames(matrix)), T)
+  
+  if (length(tt) == 0){
+    sel <- intersect(rownames(mapping), rownames(matrix)); head(sel, "3")
+  }else{
+    sel <- intersect(rownames(mapping), colnames(matrix)); head(sel, "3")
+  }
+
   mapping.sel <- mapping[sel,, drop=F];dim(mapping.sel)
   
   
   
   # phylum annotation
   annotation_row = data.frame(
-    Phylum = as.factor(tax_table(ps.rel.sel)[, "Phylum"])
+    if(type == "taxonomy" | type == "taxanomy" ){
+      Phylum = as.factor(tax_table(ps.rel.sel)[, "Phylum"])
+    }else if(type == "function"){
+      Path = as.factor(tax_table(ps.rel.sel)[, "Path"])
+    }
   )
+  
+  
+  if(type == "taxonomy" | type == "taxanomy" ){
+    phylum_col <- head(brewer.pal(8, "Dark2"),length(unique(annotation_row$Phylum)))
+    names(phylum_col) = levels(annotation_row$Phylum)
+  }else if(type == "function"){
+    Path_col <- head(brewer.pal(8, "Dark2"),length(unique(annotation_row$Path)))
+    names(Path_col) = levels(annotation_row$Path)
+  }
+  
   rownames(annotation_row) = rownames(matrix)
+  
+  
+  
+  tt <- try(rownames(annotation_row) <- rownames(matrix), T)
+  
+  if (class(tt) == "try-error"){
+    rownames(annotation_row) <- colnames(matrix)
+  }else{
+    rownames(annotation_row) <- rownames(matrix)
+  }
+  
+  
   
   # phylum colors
   # phylum_col = RColorBrewer::brewer.pal(length(levels(annotation_row$Phylum)), "Dark2")
-  
-  phylum_col <- head(brewer.pal(8, "Dark2"),length(unique(annotation_row$Phylum)))
-  names(phylum_col) = levels(annotation_row$Phylum)
+
   
   # add group(s) and color list
   if (!is.null(group2)){
@@ -103,7 +141,13 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
     ann_colors = list(
       group1 = group1.col,
       group2 = group2.col,
-      Phylum = phylum_col
+      
+      
+      if(type == "taxonomy" | type == "taxanomy" ){
+        Phylum = phylum_col
+      }else if(type == "function"){
+        Path<- Path_col
+      }
     )
     names(ann_colors) <-c(group1, group2, "Phylum")
   }else{
@@ -120,9 +164,14 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
     # color list
     ann_colors = list(
       group1 = group1.col,
-      Phylum = phylum_col
+      if(type == "taxonomy" | type == "taxanomy" ){
+        Phylum = phylum_col
+        names(ann_colors) <-c(group1, "Phylum")
+      }else if(type == "function"){
+        Path<- Path_col
+        names(ann_colors) <-c(group1, "Path")
+      }
     )
-    names(ann_colors) <-c(group1, "Phylum")
     
   };ann_colors
   
@@ -139,12 +188,13 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
                                 labels_row=taxaTab$Species,
                                 annotation_colors = ann_colors)
   
+  # logic for out file
+  pdf(sprintf("%s//pheatmap.%s.(%s).%s.%s.pdf", out_path, 
+              project, 
+              title,
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
   
-  if (!is.null(name)) {
-    pdf(sprintf("%s/pheatmap.%s.(%s).%s.%s.pdf", out_path, project,title, name,format(Sys.Date(), "%y%m%d")), height = h, width = width)
-  }   else {
-    pdf(sprintf("%s/pheatmap.%s.(%s).%s.pdf", out_path, project,title, format(Sys.Date(), "%y%m%d")), height = h, width = width)
-  }
   
   print(p)
   

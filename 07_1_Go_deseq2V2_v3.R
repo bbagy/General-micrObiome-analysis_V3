@@ -153,6 +153,7 @@ Go_deseq2_V2 <- function(psIN, metaData, project, order,type, filter, taxanames,
       print(sprintf("~ %s", mvar))
     }
 
+    test<- data.frame(otu_table(psIN.cb))
     
     geoMeans = apply(counts(dds), 1, gm_mean)
     dds = estimateSizeFactors(dds, geoMeans = geoMeans)
@@ -256,7 +257,7 @@ Go_deseq2_V2 <- function(psIN, metaData, project, order,type, filter, taxanames,
           }
         }
       } else if(type == "function"){
-        for(taxa in c("KO", "KO.des","Path","Path.des")){
+        for(taxa in c("Path","Path.des")){ #c("KO","KO.des","Path","Path.des")
           res[,taxa] == "NA"
           res[,taxa]<- as.character(res[,taxa])
           res[,taxa][is.na(res[,taxa])] <- "__"
@@ -271,7 +272,7 @@ Go_deseq2_V2 <- function(psIN, metaData, project, order,type, filter, taxanames,
         res$ShortName <- paste(res$Path.des,"",res$KO.des)
         
         # use last taxa name
-        for(taxa in c("KO", "KO.des","Path","Path.des")){
+        for(taxa in c("Path","Path.des")){ #c("KO","KO.des","Path","Path.des")
           for(i in 1:length(res[,taxa])){
             if (res$ShortName[i] != "  "){
               next
@@ -321,46 +322,28 @@ Go_deseq2_V2 <- function(psIN, metaData, project, order,type, filter, taxanames,
       }
       
 
+      write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/(%s.vs.%s).Sig%s.%s.%s%s%s%s.DA.csv",out_deseq2.Tab,
+                                                               basline, 
+                                                               smvar,
+                                                               dim(res.sel)[1],
+                                                               mvar,
+                                                               ifelse(is.null(des), "", paste(des, ".", sep = "")), 
+                                                               ifelse(is.null(taxanames), "", paste(taxanames, ".", sep = "")), 
+                                                               ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+                                                               project, sep="/"))
+      
+      saveRDS(ps.taxa.sig,sprintf("%s/(%s.vs.%s).Sig%s.%s.%s%s%s%s.rds",out_deseq2.ps,
+                                  basline, 
+                                  smvar,
+                                  dim(res.sel)[1],
+                                  mvar, 
+                                  ifelse(is.null(des), "", paste(des, ".", sep = "")), 
+                                  ifelse(is.null(taxanames), "", paste(taxanames, ".", sep = "")), 
+                                  ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+                                  project))
+      
+      
 
-      
-      
-      if (!is.null(taxanames)) {
-        if (!is.null(des)) {
-          if (!is.null(name)) {
-            write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/(%s.vs.%s).%s.%s.%s.%s.Deseq2.csv",out_deseq2.Tab,basline,smvar,dim(res.sel)[1], mvar, des, name,taxanames,project,sep="/"))
-            saveRDS(ps.taxa.sig, sprintf("%s/(%s.vs.%s).%s.%s.%s.%s.Deseq2.rds",out_deseq2.ps,basline,smvar, dim(res.sel)[1],mvar, des, name,taxanames,project))
-          } else {
-            write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/(%s.vs.%s).%s.%s.%s.Deseq2.csv",out_deseq2.Tab,basline,smvar,dim(res.sel)[1],mvar,des,taxanames,project,sep="/"))
-            saveRDS(ps.taxa.sig, sprintf("%s/(%s.vs.%s).%s.%s.%s.Deseq2.rds",out_deseq2.ps,basline,smvar,dim(res.sel)[1],mvar,des,taxanames,project))
-          }
-        } else {
-          if (!is.null(name)) {
-            write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.%s.Deseq2.csv",out_deseq2.Tab, basline,smvar,dim(res.sel)[1],mvar,name,taxanames,project,sep="/"))
-            saveRDS(ps.taxa.sig, sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.%s.Deseq2.rds",out_deseq2.ps, basline,smvar,dim(res.sel)[1],mvar,name,taxanames,project))
-          } else{
-            write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.Deseq2.csv",out_deseq2.Tab,basline, smvar,dim(res.sel)[1],mvar, taxanames,project, sep="/"))
-            saveRDS(ps.taxa.sig, printf("%s/(%s.vs.%s).Sig%s.%s.%s.Deseq2.rds",out_deseq2.ps,basline, smvar,dim(res.sel)[1],mvar, taxanames,project))
-          }
-        }
-      }else{
-        if (!is.null(des)) {
-          if (!is.null(name)) {
-            write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.%s.%s.Deseq2.csv",out_deseq2.Tab,basline,smvar, dim(res.sel)[1],mvar, des, name, project,sep="/"))
-            saveRDS(ps.taxa.sig,sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.%s.%s.Deseq2.rds",out_deseq2.ps,basline,smvar, dim(res.sel)[1],mvar, des, name, project))
-          } else {
-            write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.%s.Deseq2.csv",out_deseq2.Tab,basline,smvar,dim(res.sel)[1],mvar,des,project,sep="/"))
-            saveRDS(ps.taxa.sig, sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.%s.Deseq2.rds",out_deseq2.ps,basline,smvar,dim(res.sel)[1],mvar,des,project))
-          }
-        } else {
-          if (!is.null(name)) {
-            write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.%s.Deseq2.csv",out_deseq2.Tab, basline,smvar,dim(res.sel)[1],mvar,name,project,sep="/"))
-            saveRDS(ps.taxa.sig,sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.%s.Deseq2.rds",out_deseq2.ps, basline,smvar,dim(res.sel)[1],mvar,name,project))
-          } else{
-            write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.Deseq2.csv",out_deseq2.Tab,basline, smvar,dim(res.sel)[1],mvar, project, sep="/"))
-            saveRDS(ps.taxa.sig,sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.Deseq2.rds",out_deseq2.ps,basline, smvar,dim(res.sel)[1],mvar, project))
-          }
-        }
-      }
     }
   }
 }
