@@ -14,9 +14,6 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
     
   alpha_metrics = c("Chao1","Shannon")
   
-  # colorset = "Dark2" # Dark1 Set1 Paired
-  Tableau10 = c("#1170aa", "#fc7d0b",  "#76B7B2", "#E15759","#59A14F","#EDC948", "#B07AA1", "#FF9DA7", "#9C755F", "#BABOAC") 
-  
   # Descriptions 분석 하고자 하는 variation에 subgroup
   # paired 환자나 같은 사람 ID
   # node 전반적인 패턴을 보고 가장 높은 time point 에 node를 설정  
@@ -116,7 +113,7 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
           ggtitle(sprintf("%s \n (%s) ", mvar, clme.globalp))  + 
           theme_bw() + theme(strip.background = element_blank()) + 
           theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" )+ 
-          scale_color_manual(values = Tableau10)
+          scale_color_manual(values = mycols)
         
         if (length(ID) == 1) {
           p= p + geom_text_repel(aes_string(label = ID), size = 2)
@@ -151,7 +148,7 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
             xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + 
             ggtitle(sprintf("%s-%s \n (%s) ", mvar, des, clme.globalp))   + theme_bw() +
             theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" ) +
-            scale_color_manual(values = Tableau10) #+ scale_color_brewer(palette=Tableau10)
+            scale_color_manual(values = mycols)
           
           if (length(ID) == 1) {
             p= p + geom_text_repel(aes_string(label = ID), size = 2)

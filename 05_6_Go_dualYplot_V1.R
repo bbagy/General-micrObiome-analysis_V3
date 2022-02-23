@@ -6,11 +6,7 @@ Go_dualYplot <- function(df, TaxTab, metaData, project, orders=NULL, Box, Line1,
                        xanlgle=90,  height, width){
   
   if(!is.null(dev.list())) dev.off()
-  # plot color
-  # colorset = "Dark2" # Dark2 Set1 Paired
-  Tableau10 = c("#1170aa", "#fc7d0b",  "#76B7B2", "#E15759","#59A14F","#EDC948", "#B07AA1", "#FF9DA7", "#9C755F", "#BABOAC") 
-  
-  
+
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out)) dir.create(out)
@@ -106,7 +102,7 @@ Go_dualYplot <- function(df, TaxTab, metaData, project, orders=NULL, Box, Line1,
       geom_boxplot(data=adiv.na, mapping=aes(x=!!sym(mvar), y=!!sym(Box), colour=!!sym(mvar)), outlier.shape = NA, show.legend = FALSE) +
       theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5)) +
       # theme(legend.position="none") +
-      scale_color_manual(NULL, values = Tableau10) 
+      scale_color_manual(NULL, values = mycols) 
     
     p1 <- p + geom_line(data = mean.line1, 
                         mapping = aes(x = !!sym(mvar), y = !!sym(Line1), group=1, linetype=""), 

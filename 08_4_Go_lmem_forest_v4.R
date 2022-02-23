@@ -8,7 +8,8 @@
 #' Go_lmem_fore()
 # dircolors <- c("blue", "red", "grey"); names(dircolors) <- c("down", "up", "NS")
 # dircolors <- c("#4f86f7", "#e10000", "grey"); names(dircolors) <- c("down", "up", "NS")
-Go_lmem_fore <- function(project,file_path, alpha, pattern, name, order, height, width){
+
+Go_lmem_fore <- function(project,file_path, alpha, files, name, order, height, width){
     if(!is.null(dev.list())) dev.off()
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
@@ -18,26 +19,28 @@ Go_lmem_fore <- function(project,file_path, alpha, pattern, name, order, height,
 
   # add input files
   path <- file_path
-  filenames <- list.files(path, pattern=pattern);filenames
-  sample.names <- sapply(strsplit(filenames, pattern), `[`, 1) ;sample.names
+  filenames <- list.files(path, pattern=files);filenames
   
-
   print(path)
   print(filenames)
+  
 
+  
   # out file
-  if (length(name) == 1) {
-    pdf(sprintf("%s_%s/pdf/9_lmem.forest.%s.%s.(%s).%s.pdf", project, format(Sys.Date(), "%y%m%d"), project, name, alpha,format(Sys.Date(), "%y%m%d")), height = height, width = width)
-  }
-  else {
-    pdf(sprintf("%s_%s/pdf/9_lmem.forest.%s.(%s).%s.pdf", project, format(Sys.Date(), "%y%m%d"), project, alpha, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-  }
+  pdf(sprintf("%s/lmem.forest.%s.%s(%s).%s.pdf", out_path, 
+              project, 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              alpha, 
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
+  
+  
+  
+  
+  
+  
+  for (fn in 1:length(filenames)) {
+    df <- read.csv(sprintf("%s/%s",path, filenames[fn]), row.names=NULL ,check.names=FALSE,quote = "")
 
-  
-  
-  for (sn in sample.names) {
-    file <- list.files(path, pattern = sprintf("%s%s", sn, sprintf("%s", pattern)), full.names =T)
-    df <- read.csv(file,row.names=NULL ,check.names=FALSE)
     df.sel <- df
     resSig <- as.data.frame(subset(df.sel, padj < alpha)); resSig <- resSig[order(resSig$Estimate),]
     # resSig$smvar <- factor(resSig$smvar)
@@ -72,7 +75,7 @@ Go_lmem_fore <- function(project,file_path, alpha, pattern, name, order, height,
         # color
         resSig.sel$dir <- gsub('down',baseline, gsub('up',compare, resSig.sel$dir))
         resSig.sel$dir <- factor(resSig.sel$dir, levels = c(as.character(baseline), "NS", as.character(compare)))
-        dircolors <- c("#f7022a", "grey","#4f86f7"); names(dircolors) <- c(as.character(baseline), "NS", as.character(compare))
+        dircolors <- c("#1170aa", "grey","#fc7d0b"); names(dircolors) <- c(as.character(baseline), "NS", as.character(compare))
         # color end
         
         lims <- max(abs(resSig.sel$Estimate) + abs(resSig.sel$SE))*1.0
@@ -81,8 +84,8 @@ Go_lmem_fore <- function(project,file_path, alpha, pattern, name, order, height,
           geom_hline(yintercept=0) + theme_classic()  + coord_flip() +  
           scale_color_manual(values=dircolors) + ylim(c(-lims, lims)) +scale_x_discrete(breaks = as.character(resSig.sel$ASV), labels = resSig.sel$taxa)+theme(plot.title = element_text(size=8, hjust = 1))
         
-        sn <- gsub("\\..*","",sn);sn
-        p1 <- p1+ ggtitle(sprintf("LMEM-%s (%s padj < %s) ",sn, plot, alpha)) + labs(y = "Estimate") +labs(x = NULL)
+        #sn <- gsub("\\..*","",sn);sn
+        p1 <- p1+ ggtitle(sprintf("LMEM-%s ( padj < %s) ", plot, alpha)) + labs(y = "Estimate") +labs(x = NULL)
         
         print(p1)
       } else if (length(unique(resSig.sel$coefficient)) >=1){
@@ -97,7 +100,10 @@ Go_lmem_fore <- function(project,file_path, alpha, pattern, name, order, height,
           # color
           resSig.sel.sel$dir <- gsub('down',baseline, gsub('up',compare, resSig.sel.sel$dir))
           resSig.sel.sel$dir <- factor(resSig.sel.sel$dir, levels = c(as.character(baseline), "NS", as.character(compare)))
-          dircolors <- c("#f7022a", "grey","#4f86f7"); names(dircolors) <- c(as.character(baseline), "NS", as.character(compare))
+
+          
+          dircolors <- c("#1170aa", "grey","#fc7d0b"); names(dircolors) <- c(as.character(baseline), "NS", as.character(compare))
+          
           # color end
           
           lims <- max(abs(resSig.sel.sel$Estimate) + abs(resSig.sel.sel$SE))*1.0
@@ -106,9 +112,9 @@ Go_lmem_fore <- function(project,file_path, alpha, pattern, name, order, height,
             geom_hline(yintercept=0) + theme_classic()  + coord_flip() +  
             scale_color_manual(values=dircolors) + ylim(c(-lims, lims)) +scale_x_discrete(breaks = as.character(resSig.sel.sel$ASV), labels = resSig.sel.sel$taxa)+theme(plot.title = element_text(size=8, hjust = 1))
           
-          sn <- gsub("\\..*","",sn);sn
+          #sn <- gsub("\\..*","",sn);sn
           
-          p1 <- p1+ ggtitle(sprintf("LMEM-%s  (in %s for %s padj < %s) ",sn,unique(resSig.sel.sel$metadata), compare, alpha)) +
+          p1 <- p1+ ggtitle(sprintf("LMEM  (in %s for %s padj < %s) ",unique(resSig.sel.sel$metadata), compare, alpha)) +
             labs(y = "Estimate") +labs(x = NULL)
           print(p1)
         }

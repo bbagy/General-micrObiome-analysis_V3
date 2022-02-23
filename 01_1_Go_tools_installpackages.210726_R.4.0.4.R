@@ -59,13 +59,13 @@ cat(blue("#--------------------------------------------------------------# \n"))
 cat(blue("#------       General analysis Of microbiome (Go)        ------# \n"))
 cat(blue("#------    Quick statistics and visualization tools      ------# \n"))
 cat(blue("#--------------------------------------------------------------# \n"))
-cat(red("                                      Version: Go_tools.2.8.1 \n"))
+cat(red("                                      Version: Go_tools.2.8.3 \n"))
 cat("                                              Write by Heekuk \n")
 cat(yellow("All the required packages were installed.\n"))
 cat(yellow("All the required packages were loaded.\n"))
 cat(blue("#--------------------------------------------------------------# \n"))
 
-mycols = c("#1170aa", "#fc7d0b",  "#76B7B2", "#B07AA1", "#E15759","#59A14F","#EDC948", "#FF9DA7", "#9C755F", "#BABOAC") # Tableau10
+#mycols = c("#1170aa", "#fc7d0b",  "#76B7B2", "#B07AA1", "#E15759","#59A14F","#EDC948", "#FF9DA7", "#9C755F", "#BABOAC") # Tableau10
 
   # plot color
   # colorset = "Dark2" # Dark2 Set1 Paired

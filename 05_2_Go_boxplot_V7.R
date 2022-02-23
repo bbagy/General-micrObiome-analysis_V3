@@ -95,14 +95,14 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
       
       
       # re-order
-      if (length(orders) >= 1) {
+      if (!is.null(orders)) {
         adiv.na[,mvar] <- factor(adiv.na[,mvar], levels = orders)
       } else {
         adiv.na[,mvar] <- factor(adiv.na[,mvar])
       }
       
       # remove NA for facet
-      if (length(facet) >= 1) {
+      if (!is.null(facet)) {
         for (fc in facet){
           adiv.na[,fc] <- as.character(adiv.na[,fc]);adiv.na[,fc]
           adiv.na[,fc][adiv.na[,fc] == ""] <- "NA"
@@ -155,9 +155,9 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
       if(oc == "Shannon"){
         if(!is.null(ylim)){
           p1 = p1 + ylim(ylim[1] , ylim[2])
-        }else(
+        }else{
           p1=p1
-        )
+        }
       }
 
       # paired plot type

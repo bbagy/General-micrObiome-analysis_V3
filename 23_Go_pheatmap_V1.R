@@ -1,7 +1,7 @@
 
 
 Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL, name=NULL,
-                        show_rownames = T,show_colnames = F,type,
+                        show_rownames = T,show_colnames = F,type,showPhylum = T,
                         cluster_rows = T,cluster_cols = T, 
                         width){
   # BiocManager::install("ComplexHeatmap")
@@ -97,17 +97,20 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
   
   
   if(type == "taxonomy" | type == "taxanomy" ){
+    colnames(annotation_row) <- c("Phylum")
     phylum_col <- head(brewer.pal(8, "Dark2"),length(unique(annotation_row$Phylum)))
     names(phylum_col) = levels(annotation_row$Phylum)
-  }else if(type == "function"){
-    Path_col <- head(brewer.pal(8, "Dark2"),length(unique(annotation_row$Path)))
+    
+  } else if(type == "function"){
+    colnames(annotation_row) <- c("Path")
+    
+    getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
+    Path_col <- getPalette(length(unique(annotation_row$Path)))
     names(Path_col) = levels(annotation_row$Path)
   }
   
-  rownames(annotation_row) = rownames(matrix)
-  
-  
-  
+
+
   tt <- try(rownames(annotation_row) <- rownames(matrix), T)
   
   if (class(tt) == "try-error"){
@@ -137,63 +140,97 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
     
     group2.col <- head(brewer.pal(12, "Paired"),length(unique(mapping.sel[,group2])))
     names(group2.col) <- unique(mapping.sel[,group2])
+    
     # color list
-    ann_colors = list(
-      group1 = group1.col,
-      group2 = group2.col,
-      
-      
-      if(type == "taxonomy" | type == "taxanomy" ){
+    
+    print(2)
+    if(type == "taxonomy" | type == "taxanomy" ){
+      ann_colors = list(
+        group1 = group1.col,
+        group2 = group2.col,
         Phylum = phylum_col
-      }else if(type == "function"){
-        Path<- Path_col
-      }
-    )
-    names(ann_colors) <-c(group1, group2, "Phylum")
+      )
+      names(ann_colors) <-c(group1, group2, "Phylum")
+    }else if(type == "function"){
+      ann_colors = list(
+        group1 = group1.col,
+        group2 = group2.col,
+        Path = Path_col
+      )
+      names(ann_colors) <-c(group1, group2,"Path")
+    }
+    
   }else{
     annotation_col = data.frame(
       group1 = as.factor(mapping.sel[,group1]),
       check.names = FALSE
     )
-    colnames(annotation_col) <-c(group1)
+    colnames(annotation_col) <- c(group1)
     
     # group colors
     group1.col <- head(brewer.pal(8, "Set2"),length(unique(mapping.sel[,group1])))
     names(group1.col) = levels(as.factor(mapping.sel[,group1]))
     
     # color list
-    ann_colors = list(
-      group1 = group1.col,
-      if(type == "taxonomy" | type == "taxanomy" ){
-        Phylum = phylum_col
-        names(ann_colors) <-c(group1, "Phylum")
-      }else if(type == "function"){
-        Path<- Path_col
-        names(ann_colors) <-c(group1, "Path")
-      }
-    )
     
+    if(type == "taxonomy" | type == "taxanomy" ){
+      ann_colors = list(
+        group1 = group1.col,
+        Phylum = phylum_col
+      )
+      names(ann_colors) <-c(group1, "Phylum")
+    }else if(type == "function"){
+      ann_colors = list(
+        group1 = group1.col,
+        Path = Path_col
+      )
+      names(ann_colors) <-c(group1, "Path")
+    }
   };ann_colors
   
   rownames(annotation_col) = rownames(mapping.sel)
   
-  p <- ComplexHeatmap::pheatmap(matrix, scale= "row", 
-                                main = title,
-                                annotation_col = annotation_col, 
-                                annotation_row = annotation_row, 
-                                show_rownames = show_rownames,
-                                show_colnames = show_colnames,
-                                cluster_rows = cluster_rows,
-                                cluster_cols = cluster_cols,
-                                labels_row=taxaTab$Species,
-                                annotation_colors = ann_colors)
+  if(type == "taxonomy" | type == "taxanomy" ){
+    matrix = matrix
+  }else if(type == "function"){
+    matrix<- t(matrix)
+  }
+  
+  print(Path_col)
+  
+  if (showPhylum ==TRUE){
+    p <- ComplexHeatmap::pheatmap(matrix, scale= "row", 
+                                  main = title,
+                                  annotation_col = annotation_col, 
+                                  annotation_row = annotation_row, 
+                                  show_rownames = show_rownames,
+                                  show_colnames = show_colnames,
+                                  cluster_rows = cluster_rows,
+                                  cluster_cols = cluster_cols,
+                                  labels_row=taxaTab$Species,
+                                  annotation_colors = ann_colors)
+  }  else{
+    p <- ComplexHeatmap::pheatmap(matrix, scale= "row", 
+                                  main = title,
+                                  annotation_col = annotation_col, 
+                                  #annotation_row = annotation_row, 
+                                  show_rownames = show_rownames,
+                                  show_colnames = show_colnames,
+                                  cluster_rows = cluster_rows,
+                                  cluster_cols = cluster_cols,
+                                  labels_row=taxaTab$Species,
+                                  annotation_colors = ann_colors)
+  }
+
+  
+  
   
   # logic for out file
   pdf(sprintf("%s//pheatmap.%s.(%s).%s.%s.pdf", out_path, 
               project, 
               title,
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 
-              format(Sys.Date(), "%y%m%d")), height = height, width = width)
+              format(Sys.Date(), "%y%m%d")), height = h, width = width)
   
   
   print(p)

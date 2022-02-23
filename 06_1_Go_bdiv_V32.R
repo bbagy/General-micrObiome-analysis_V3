@@ -6,9 +6,6 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
     
   if(!is.null(dev.list())) dev.off()
    
-  #colorset = "Dark2" # Dark1 Set1 Paired
-  Tableau10 = c("#1170aa", "#fc7d0b",  "#76B7B2", "#E15759","#59A14F","#EDC948", "#B07AA1", "#FF9DA7", "#9C755F", "#BABOAC") 
-  
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out)) dir.create(out)
@@ -121,7 +118,7 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
       
       p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
       p = p + facet_wrap(~ method, scales="free") + theme_bw() + theme(strip.background = element_blank())# open(1), cross(10), closed(2)
-      p = p + scale_color_manual(values = Tableau10)
+      p = p + scale_color_manual(values = mycols)
       p = p + theme(legend.position = "bottom", 
                     legend.title = element_blank(),
                     legend.justification="left", 
