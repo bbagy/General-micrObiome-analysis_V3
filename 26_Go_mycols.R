@@ -1,5 +1,5 @@
 
-Go_mycols <- function(custumCols, presetCols) {
+Go_myCols <- function(custumCols, presetCols) {
   # reset colors
   # rm(list = ls()[grep("mycols", ls())])
   
@@ -29,35 +29,35 @@ Go_mycols <- function(custumCols, presetCols) {
   if(is.null(custumCols) & !is.null(presetCols)){
     if(presetCols == "Set1"){
       mycols <- brewer.pal(9, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Set2"){
       mycols <- brewer.pal(8, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Set3"){
       mycols <- brewer.pal(12, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Pastel2"){
       mycols <- brewer.pal(8, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Pastel1"){
       mycols <- brewer.pal(9, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Paired"){
       mycols <- brewer.pal(12, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Dark2"){
       mycols <- brewer.pal(8, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Accent"){
       mycols <- brewer.pal(8, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }
   } else{

@@ -493,7 +493,7 @@ Go_qq <- function(psIN, project, alpha_metrics, name, height, width){
 #' Go_barchart()
 
 
-Go_barchart <- function(psIN, metaData, project, taxanames, data_type, simple = "no",  
+Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  
                         x_label="SampleIDfactor", facet=NULL, legend="bottom", orders,
                         cutoff=0.005, name=NULL, ncol=11, height, width,plotCols,  plotRows){
     
@@ -539,16 +539,30 @@ Go_barchart <- function(psIN, metaData, project, taxanames, data_type, simple = 
 
   plotlist <- list()
   for(i in 1:length(taxanames)){
-    # dada2 or nephele
-    if (data_type == "dada2" | data_type == "DADA2") {
-      otu.filt <- as.data.frame(t(otu_table(psIN)))
-    }
-    else if (data_type == "Nephele" | data_type == "nephele" | data_type == "Other" | data_type == "other") {
-      otu.filt <- as.data.frame(otu_table(psIN))
-    }
 
-    # continue
-    otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=taxRanks,level=taxanames[i])
+    # try table type
+    otu.filt <- as.data.frame(t(otu_table(psIN)))
+    tt <- try(otu.filt[,rank]  <- getTaxonomy(otus=rownames(otu.filt), taxRanks = colnames(tax_table(psIN)), tax_tab=tax_table(psIN), level=rank),T)
+    
+    if(class(tt) == "try-error"){
+      print("other table")
+      otu.filt <- as.data.frame(otu_table(psIN)) 
+      otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i])
+    }else{
+      otu.filt <- as.data.frame(t(otu_table(psIN)))
+      print("DADA2 table")
+      otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i])
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     if (dim(otu.filt)[2] == 2){
       next
@@ -4391,7 +4405,7 @@ Go_deseq2_ntd <- function(psIN, project,metaData, taxRanks, adjust, name,  order
 nperm <- 100000
 
 
-Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_threshold, taxRanks, data_type, des, name){
+Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_threshold, taxanames, des, name){
 
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
@@ -4401,8 +4415,6 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
   out_table <- file.path(sprintf("%s_%s/table/lmem",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_table)) dir.create(out_table)
 
-  
-  
   out_lmem.Tab <- file.path(sprintf("%s_%s/table/lmem/tab",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_lmem.Tab)) dir.create(out_lmem.Tab)
   
@@ -4411,14 +4423,15 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
   
   
   
-  ranks <- taxRanks
-  taxanames <- ranks
+  # ranks <- taxRanks
+  # taxanames <- ranks
   
   #meta data
   metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
   metadata <- as.data.frame(t(metadataInput))
   
-  psIN <- aggregate_taxa(psIN, taxRanks)
+  psIN.agg <- aggregate_taxa(psIN, taxRanks);psIN.agg
+  
   
   for (cvar in rownames(subset(metadata, Confounder =="yes"))) {
     df[, cvar] <- mapping.sel[df$SampleID, cvar]
@@ -4447,45 +4460,29 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
     smvar <- combination[2];smvar
     
     mapping.sel.cb <- subset(mapping.sel, mapping.sel[[mvar]] %in% c(baseline, smvar));dim(mapping.sel.cb) # phyloseq subset은 작동을 안한다.
-    psIN.cb <- psIN
+    psIN.cb <- psIN.agg
     sample_data(psIN.cb) <- mapping.sel.cb
     
     for(i in 1:length(taxanames)){
       # dada2 or nephele
-      if (data_type == "dada2" | data_type == "DADA2") {
-        otu.filt <- as.data.frame(t(otu_table(psIN.cb)))
-      }
-      else if (data_type == "Nephele" | data_type == "nephele") {
-        otu.filt <- as.data.frame(otu_table(psIN.cb))
-      }
-      else if (data_type == "other" | data_type == "Other") {
-        otu.filt <- as.data.frame(otu_table(psIN.cb))
-      }
+      # try table type
+      otu.filt <- as.data.frame(t(otu_table(psIN.cb)))
+      tt <- try(otu.filt[,rank]  <- getTaxonomy(otus=rownames(otu.filt), taxRanks = colnames(tax_table(psIN.cb)), tax_tab=tax_table(psIN.cb), level=rank),T)
       
-      if (dim(otu.filt)[2] == 2){
-        next
-      }
-      
-      # continue
-      if(taxanames[i] == "Species"){
-        otu.filt[,"Genus"] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN.cb), taxRanks=taxRanks,level="Genus")
-        otu.filt[,"Species"] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN.cb), taxRanks=taxRanks,level="Species")
-        
-        otu.filt$Genus.Species <- paste(otu.filt$Genus,"",otu.filt$Species)
-        otu.filt.sel <- otu.filt
-        otu.filt.sel <- otu.filt.sel[!is.na(otu.filt.sel$Genus), ]
-        otu.filt.sel$Genus  <- NULL
-        otu.filt.sel$Species <- NULL
-        agg <- aggregate(as.formula(sprintf(". ~ %s" , "Genus.Species")), otu.filt.sel, sum, na.action=na.pass)
-        genera <- agg[,"Genus.Species"]
-        
-        
+      if(class(tt) == "try-error"){
+        print("other table")
+        otu.filt <- as.data.frame(otu_table(psIN.cb)) 
+        otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN.cb), taxRanks=colnames(tax_table(psIN.cb)),level=taxanames[i])
       }else{
-        otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN.cb), taxRanks=taxRanks,level=taxanames[i])
-        
-        agg <- aggregate(as.formula(sprintf(". ~ %s" , taxanames[i])), otu.filt, sum, na.action=na.pass)
-        genera <- agg[,taxanames[i]]
+        otu.filt <- as.data.frame(t(otu_table(psIN.cb)))
+        print("DADA2 table")
+        otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN.cb), taxRanks=colnames(tax_table(psIN.cb)),level=taxanames[i])
       }
+      
+      
+      
+      agg <- aggregate(as.formula(sprintf(". ~ %s" , taxanames[i])), otu.filt, sum, na.action=na.pass)
+      genera <- agg[,taxanames[i]]
       
       agg <- agg[,-1]
       agg <- normalizeByCols(agg)
@@ -4504,9 +4501,6 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
       ## baseline등을 관리 하려면 다음이 필요하다.
 
       
-      mapping.sel.cb
-      dim(mapping.sel)
-      
       
       print(2)
       #--------------    lmer    -------------#
@@ -4520,6 +4514,7 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
         df <- melt(agg[f,]); colnames(df) <- c("Genus", "SampleID", "value"); df$SampleID <- as.character(df$SampleID)
         
         df$StudyID <- mapping.sel.cb[df$SampleID, StudyID]
+        
         
         
         
@@ -4599,8 +4594,22 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
        if(dim(res.sel)[1] == 0){
         ps.taxa.sig <- psIN.cb
       }else{
-        ps.taxa.sig <- prune_taxa(taxa_sig, psIN.cb)
-        print(ps.taxa.sig)
+        tt <- try(ps.taxa.sig <- prune_taxa(taxa_sig, psIN.cb),T)
+        
+        if(class(tt) == "try-error"){
+          pathwayTab <- data.frame(otu_table(psIN.cb))
+          pathwayRank <- data.frame(tax_table(psIN.cb))
+          rownames(pathwayRank) <- pathwayRank[,taxRanks]
+          rownames(pathwayTab) <- pathwayRank[,taxRanks]
+          pathwayRank <- as.matrix(pathwayRank)
+          pathwayTab <- as.matrix(t(pathwayTab))
+          psIN.cb <- phyloseq(otu_table(pathwayTab, taxa_are_rows=FALSE), tax_table(pathwayRank));psIN.cb
+          ps.taxa.sig <- prune_taxa(taxa_sig, psIN.cb)
+          print(ps.taxa.sig)
+        }else{
+          ps.taxa.sig <- prune_taxa(taxa_sig, psIN.cb)
+          print(ps.taxa.sig)
+        }
       }
       
       
@@ -4625,12 +4634,9 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
                                   ifelse(is.null(name), "", paste(name, ".", sep = "")), 
                                   project))
   }
-    }
-    
-
-    
-
+ }
 }
+
 #' A Go_deseq2_fore
 #'
 #' This function allows you to express your love of cats.
@@ -7740,7 +7746,11 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
   
   if(type == "taxonomy" | type == "taxanomy" ){
     colnames(annotation_row) <- c("Phylum")
-    phylum_col <- head(brewer.pal(8, "Dark2"),length(unique(annotation_row$Phylum)))
+    
+    getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
+    phylum_col <- getPalette(length(unique(annotation_row$Phylum)))
+    
+    #phylum_col <- head(brewer.pal(8, "Dark2"),length(unique(annotation_row$Phylum)))
     names(phylum_col) = levels(annotation_row$Phylum)
     
   } else if(type == "function"){
@@ -7777,15 +7787,24 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
     colnames(annotation_col) <-c(group1, group2)
     
     # group colors
-    group1.col <- head(brewer.pal(8, "Set2"),length(unique(mapping.sel[,group1])))
-    names(group1.col) = levels(as.factor(mapping.sel[,group1]))
+    if (length(unique(mapping.sel[,group1])) > 8){
+      getPalette = colorRampPalette(brewer.pal(8, "Set2"))
+      group1.col <- getPalette(length(unique(mapping.sel[,group1])))
+      names(Path_col) = levels(annotation_row$Path)
+      print(1)
+    } else{
+      group1.col <- head(brewer.pal(8, "Set2"),length(unique(mapping.sel[,group1])))
+      names(group1.col) = levels(as.factor(mapping.sel[,group1]))
+      print(2)
+    }
+    
+    
+    
     
     group2.col <- head(brewer.pal(12, "Paired"),length(unique(mapping.sel[,group2])))
     names(group2.col) <- unique(mapping.sel[,group2])
     
     # color list
-    
-    print(2)
     if(type == "taxonomy" | type == "taxanomy" ){
       ann_colors = list(
         group1 = group1.col,
@@ -7810,8 +7829,17 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
     colnames(annotation_col) <- c(group1)
     
     # group colors
-    group1.col <- head(brewer.pal(8, "Set2"),length(unique(mapping.sel[,group1])))
-    names(group1.col) = levels(as.factor(mapping.sel[,group1]))
+    
+    if (length(unique(mapping.sel[,group1])) > 8){
+      getPalette = colorRampPalette(brewer.pal(8, "Set2"))
+      group1.col <- getPalette(length(unique(mapping.sel[,group1])))
+      names(Path_col) = levels(annotation_row$Path)
+      print(3)
+    } else{
+      group1.col <- head(brewer.pal(8, "Set2"),length(unique(mapping.sel[,group1])))
+      names(group1.col) = levels(as.factor(mapping.sel[,group1]))
+      print(4)
+    }
     
     # color list
     
@@ -7828,18 +7856,18 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
       )
       names(ann_colors) <-c(group1, "Path")
     }
-  };ann_colors
+  }
   
   rownames(annotation_col) = rownames(mapping.sel)
   
   if(type == "taxonomy" | type == "taxanomy" ){
-    matrix = matrix
+    matrix = t(as.matrix(matrix))
   }else if(type == "function"){
     matrix<- t(matrix)
   }
   
-  print(Path_col)
-  
+  class(annotation_col)
+
   if (showPhylum ==TRUE){
     p <- ComplexHeatmap::pheatmap(matrix, scale= "row", 
                                   main = title,
@@ -8597,7 +8625,7 @@ Go_DA_heat <- function(df, project, data_type, facet,groupby,font, alpha,beta, o
 #' A Go_groupBox
 #'
 
-Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =NULL, rank, cutoff, ylim=NULL){
+Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =NULL, rank, cutoff, color=NULL, ylim=NULL,flip,height, width){
   
   if(!is.null(dev.list())) dev.off()
   # out dir
@@ -8619,7 +8647,7 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
   
   
   ### log transformation
-  ps.top.rel <- transform_sample_counts(ps.top, function(x) x / log2(x) ) # log(1+x) 를 하면 NaN가 많이 나온다.
+  ps.top.rel <- transform_sample_counts(ps.top, function(x) x / log2(x)) # log(1+x) 를 하면 NaN가 많이 나온다.
   
   tab = data.frame(otu_table(ps.top.rel))
   
@@ -8640,7 +8668,7 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
   ftk <- names(which(unlist(apply(agg, 1, function(x) length(which(x>=nsamps_threshold)))) > ceiling(filt_threshold*ncol(agg))))
   agg <- agg[intersect(ftk,ftk),]
   agg$Taxa <- rownames(agg)
-  agg_t <- t(agg)
+  # agg_t <- t(agg)
   
   
   
@@ -8716,8 +8744,12 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
     df.sel.melt.clean[,mainGroup] <- factor(df.sel.melt.clean[,mainGroup])
   }
   
+  df.sel.melt.clean$variable <- as.character(df.sel.melt.clean$variable)
   
-  p <- ggplot(df.sel.melt.clean, aes_string(x="variable", y="value", fill=mainGroup)) +  geom_boxplot(outlier.shape = NA) + coord_flip() +
+  df.sel.melt.clean <- df.sel.melt.clean[order(df.sel.melt.clean$variable ,  decreasing = F), ]
+  
+  
+  p <- ggplot(df.sel.melt.clean, aes_string(x="variable", y="value", fill=mainGroup)) +  geom_boxplot(outlier.shape = NA,lwd=0.3) + 
     theme_bw() + theme(strip.background = element_blank()) + 
     labs(y="Relative abundance (log2)", x= NULL) + ggtitle(sprintf("kruskal wallis p < %s",cutoff))
   
@@ -8725,12 +8757,27 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
     
   #+ scale_x_discrete(limits = rev)
   
-  tt <- try(mycols, T)
-  if(class(tt) == "try-error"){
-    p <- p
+  
+  if(!is.null(color)){
+    p <- p + scale_fill_manual(values = color)
   }else{
-    p <- p + scale_fill_manual(values = mycols)
+    p <- p
   }
+
+  if(flip == T){
+    p <- p+ coord_flip()
+  }else{
+    p <- p + theme(text=element_text(size=9), axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+  }
+  
+
+  
+  # tt <- try(mycols, T)
+  # if(class(tt) == "try-error"){
+  #  p <- p
+  # }else{
+  #   p <- p + scale_fill_manual(values = mycols)
+  # }
 
   if(!is.null(ylim)){
     p = p + ylim(ylim[1] , ylim[2])
@@ -8739,9 +8786,9 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
   }
   
   #=== image size ===#
-  height <- 0.4*length(unique(df.sel.melt.clean[,mainGroup])) + 0.4*dim(kw.sig)[1];height
-  width <- log((max(nchar(funcNames.sig)))*max(nchar(as.character(unique(df.sel.melt.clean[,mainGroup])))));width
-  
+  #height <- 0.4*length(unique(df.sel.melt.clean[,mainGroup])) + 0.4*dim(kw.sig)[1];height
+  #width <- log((max(nchar(funcNames.sig)))*max(nchar(as.character(unique(df.sel.melt.clean[,mainGroup])))));width
+  print(p)
   
   pdf(sprintf("%s/groupBox.%s.%s.%s%s%s.pdf", out_path, 
               project, 
@@ -8763,7 +8810,7 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
 
 
 
-Go_mycols <- function(custumCols, presetCols) {
+Go_myCols <- function(custumCols, presetCols) {
   # reset colors
   # rm(list = ls()[grep("mycols", ls())])
   
@@ -8793,35 +8840,35 @@ Go_mycols <- function(custumCols, presetCols) {
   if(is.null(custumCols) & !is.null(presetCols)){
     if(presetCols == "Set1"){
       mycols <- brewer.pal(9, presetCols)
-      cat(sprintf("mycols was set as [%s].","\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Set2"){
       mycols <- brewer.pal(8, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Set3"){
       mycols <- brewer.pal(12, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Pastel2"){
       mycols <- brewer.pal(8, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Pastel1"){
       mycols <- brewer.pal(9, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Paired"){
       mycols <- brewer.pal(12, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Dark2"){
       mycols <- brewer.pal(8, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Accent"){
       mycols <- brewer.pal(8, presetCols)
-      cat(sprintf("mycols was set as [%s].\n",presetCols))
+      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }
   } else{

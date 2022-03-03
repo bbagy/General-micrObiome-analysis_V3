@@ -1,7 +1,7 @@
 #' A Go_groupBox
 #'
 
-Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =NULL, rank, cutoff, ylim=NULL){
+Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =NULL, rank, cutoff, color=NULL, ylim=NULL,flip,height, width){
   
   if(!is.null(dev.list())) dev.off()
   # out dir
@@ -23,7 +23,7 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
   
   
   ### log transformation
-  ps.top.rel <- transform_sample_counts(ps.top, function(x) x / log2(x) ) # log(1+x) 를 하면 NaN가 많이 나온다.
+  ps.top.rel <- transform_sample_counts(ps.top, function(x) x / log2(x)) # log(1+x) 를 하면 NaN가 많이 나온다.
   
   tab = data.frame(otu_table(ps.top.rel))
   
@@ -44,7 +44,7 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
   ftk <- names(which(unlist(apply(agg, 1, function(x) length(which(x>=nsamps_threshold)))) > ceiling(filt_threshold*ncol(agg))))
   agg <- agg[intersect(ftk,ftk),]
   agg$Taxa <- rownames(agg)
-  agg_t <- t(agg)
+  # agg_t <- t(agg)
   
   
   
@@ -120,8 +120,12 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
     df.sel.melt.clean[,mainGroup] <- factor(df.sel.melt.clean[,mainGroup])
   }
   
+  df.sel.melt.clean$variable <- as.character(df.sel.melt.clean$variable)
   
-  p <- ggplot(df.sel.melt.clean, aes_string(x="variable", y="value", fill=mainGroup)) +  geom_boxplot(outlier.shape = NA) + coord_flip() +
+  df.sel.melt.clean <- df.sel.melt.clean[order(df.sel.melt.clean$variable ,  decreasing = F), ]
+  
+  
+  p <- ggplot(df.sel.melt.clean, aes_string(x="variable", y="value", fill=mainGroup)) +  geom_boxplot(outlier.shape = NA,lwd=0.3) + 
     theme_bw() + theme(strip.background = element_blank()) + 
     labs(y="Relative abundance (log2)", x= NULL) + ggtitle(sprintf("kruskal wallis p < %s",cutoff))
   
@@ -129,12 +133,27 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
     
   #+ scale_x_discrete(limits = rev)
   
-  tt <- try(mycols, T)
-  if(class(tt) == "try-error"){
-    p <- p
+  
+  if(!is.null(color)){
+    p <- p + scale_fill_manual(values = color)
   }else{
-    p <- p + scale_fill_manual(values = mycols)
+    p <- p
   }
+
+  if(flip == T){
+    p <- p+ coord_flip()
+  }else{
+    p <- p + theme(text=element_text(size=9), axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+  }
+  
+
+  
+  # tt <- try(mycols, T)
+  # if(class(tt) == "try-error"){
+  #  p <- p
+  # }else{
+  #   p <- p + scale_fill_manual(values = mycols)
+  # }
 
   if(!is.null(ylim)){
     p = p + ylim(ylim[1] , ylim[2])
@@ -143,9 +162,9 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
   }
   
   #=== image size ===#
-  height <- 0.4*length(unique(df.sel.melt.clean[,mainGroup])) + 0.4*dim(kw.sig)[1];height
-  width <- log((max(nchar(funcNames.sig)))*max(nchar(as.character(unique(df.sel.melt.clean[,mainGroup])))));width
-  
+  #height <- 0.4*length(unique(df.sel.melt.clean[,mainGroup])) + 0.4*dim(kw.sig)[1];height
+  #width <- log((max(nchar(funcNames.sig)))*max(nchar(as.character(unique(df.sel.melt.clean[,mainGroup])))));width
+  print(p)
   
   pdf(sprintf("%s/groupBox.%s.%s.%s%s%s.pdf", out_path, 
               project, 

@@ -13,7 +13,7 @@
 nperm <- 100000
 
 
-Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_threshold, taxRanks, data_type, des, name){
+Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_threshold, taxanames, des, name){
 
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
@@ -23,8 +23,6 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
   out_table <- file.path(sprintf("%s_%s/table/lmem",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_table)) dir.create(out_table)
 
-  
-  
   out_lmem.Tab <- file.path(sprintf("%s_%s/table/lmem/tab",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_lmem.Tab)) dir.create(out_lmem.Tab)
   
@@ -33,14 +31,15 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
   
   
   
-  ranks <- taxRanks
-  taxanames <- ranks
+  # ranks <- taxRanks
+  # taxanames <- ranks
   
   #meta data
   metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
   metadata <- as.data.frame(t(metadataInput))
   
-  psIN <- aggregate_taxa(psIN, taxRanks)
+  psIN.agg <- aggregate_taxa(psIN, taxRanks);psIN.agg
+  
   
   for (cvar in rownames(subset(metadata, Confounder =="yes"))) {
     df[, cvar] <- mapping.sel[df$SampleID, cvar]
@@ -69,45 +68,29 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
     smvar <- combination[2];smvar
     
     mapping.sel.cb <- subset(mapping.sel, mapping.sel[[mvar]] %in% c(baseline, smvar));dim(mapping.sel.cb) # phyloseq subset은 작동을 안한다.
-    psIN.cb <- psIN
+    psIN.cb <- psIN.agg
     sample_data(psIN.cb) <- mapping.sel.cb
     
     for(i in 1:length(taxanames)){
       # dada2 or nephele
-      if (data_type == "dada2" | data_type == "DADA2") {
-        otu.filt <- as.data.frame(t(otu_table(psIN.cb)))
-      }
-      else if (data_type == "Nephele" | data_type == "nephele") {
-        otu.filt <- as.data.frame(otu_table(psIN.cb))
-      }
-      else if (data_type == "other" | data_type == "Other") {
-        otu.filt <- as.data.frame(otu_table(psIN.cb))
-      }
+      # try table type
+      otu.filt <- as.data.frame(t(otu_table(psIN.cb)))
+      tt <- try(otu.filt[,rank]  <- getTaxonomy(otus=rownames(otu.filt), taxRanks = colnames(tax_table(psIN.cb)), tax_tab=tax_table(psIN.cb), level=rank),T)
       
-      if (dim(otu.filt)[2] == 2){
-        next
-      }
-      
-      # continue
-      if(taxanames[i] == "Species"){
-        otu.filt[,"Genus"] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN.cb), taxRanks=taxRanks,level="Genus")
-        otu.filt[,"Species"] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN.cb), taxRanks=taxRanks,level="Species")
-        
-        otu.filt$Genus.Species <- paste(otu.filt$Genus,"",otu.filt$Species)
-        otu.filt.sel <- otu.filt
-        otu.filt.sel <- otu.filt.sel[!is.na(otu.filt.sel$Genus), ]
-        otu.filt.sel$Genus  <- NULL
-        otu.filt.sel$Species <- NULL
-        agg <- aggregate(as.formula(sprintf(". ~ %s" , "Genus.Species")), otu.filt.sel, sum, na.action=na.pass)
-        genera <- agg[,"Genus.Species"]
-        
-        
+      if(class(tt) == "try-error"){
+        print("other table")
+        otu.filt <- as.data.frame(otu_table(psIN.cb)) 
+        otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN.cb), taxRanks=colnames(tax_table(psIN.cb)),level=taxanames[i])
       }else{
-        otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN.cb), taxRanks=taxRanks,level=taxanames[i])
-        
-        agg <- aggregate(as.formula(sprintf(". ~ %s" , taxanames[i])), otu.filt, sum, na.action=na.pass)
-        genera <- agg[,taxanames[i]]
+        otu.filt <- as.data.frame(t(otu_table(psIN.cb)))
+        print("DADA2 table")
+        otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN.cb), taxRanks=colnames(tax_table(psIN.cb)),level=taxanames[i])
       }
+      
+      
+      
+      agg <- aggregate(as.formula(sprintf(". ~ %s" , taxanames[i])), otu.filt, sum, na.action=na.pass)
+      genera <- agg[,taxanames[i]]
       
       agg <- agg[,-1]
       agg <- normalizeByCols(agg)
@@ -126,9 +109,6 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
       ## baseline등을 관리 하려면 다음이 필요하다.
 
       
-      mapping.sel.cb
-      dim(mapping.sel)
-      
       
       print(2)
       #--------------    lmer    -------------#
@@ -142,6 +122,7 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
         df <- melt(agg[f,]); colnames(df) <- c("Genus", "SampleID", "value"); df$SampleID <- as.character(df$SampleID)
         
         df$StudyID <- mapping.sel.cb[df$SampleID, StudyID]
+        
         
         
         
@@ -221,8 +202,22 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
        if(dim(res.sel)[1] == 0){
         ps.taxa.sig <- psIN.cb
       }else{
-        ps.taxa.sig <- prune_taxa(taxa_sig, psIN.cb)
-        print(ps.taxa.sig)
+        tt <- try(ps.taxa.sig <- prune_taxa(taxa_sig, psIN.cb),T)
+        
+        if(class(tt) == "try-error"){
+          pathwayTab <- data.frame(otu_table(psIN.cb))
+          pathwayRank <- data.frame(tax_table(psIN.cb))
+          rownames(pathwayRank) <- pathwayRank[,taxRanks]
+          rownames(pathwayTab) <- pathwayRank[,taxRanks]
+          pathwayRank <- as.matrix(pathwayRank)
+          pathwayTab <- as.matrix(t(pathwayTab))
+          psIN.cb <- phyloseq(otu_table(pathwayTab, taxa_are_rows=FALSE), tax_table(pathwayRank));psIN.cb
+          ps.taxa.sig <- prune_taxa(taxa_sig, psIN.cb)
+          print(ps.taxa.sig)
+        }else{
+          ps.taxa.sig <- prune_taxa(taxa_sig, psIN.cb)
+          print(ps.taxa.sig)
+        }
       }
       
       
@@ -247,9 +242,6 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
                                   ifelse(is.null(name), "", paste(name, ".", sep = "")), 
                                   project))
   }
-    }
-    
-
-    
-
+ }
 }
+

@@ -8,7 +8,7 @@
 #' Go_barchart()
 
 
-Go_barchart <- function(psIN, metaData, project, taxanames, data_type, simple = "no",  
+Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  
                         x_label="SampleIDfactor", facet=NULL, legend="bottom", orders,
                         cutoff=0.005, name=NULL, ncol=11, height, width,plotCols,  plotRows){
     
@@ -54,16 +54,30 @@ Go_barchart <- function(psIN, metaData, project, taxanames, data_type, simple = 
 
   plotlist <- list()
   for(i in 1:length(taxanames)){
-    # dada2 or nephele
-    if (data_type == "dada2" | data_type == "DADA2") {
-      otu.filt <- as.data.frame(t(otu_table(psIN)))
-    }
-    else if (data_type == "Nephele" | data_type == "nephele" | data_type == "Other" | data_type == "other") {
-      otu.filt <- as.data.frame(otu_table(psIN))
-    }
 
-    # continue
-    otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=taxRanks,level=taxanames[i])
+    # try table type
+    otu.filt <- as.data.frame(t(otu_table(psIN)))
+    tt <- try(otu.filt[,rank]  <- getTaxonomy(otus=rownames(otu.filt), taxRanks = colnames(tax_table(psIN)), tax_tab=tax_table(psIN), level=rank),T)
+    
+    if(class(tt) == "try-error"){
+      print("other table")
+      otu.filt <- as.data.frame(otu_table(psIN)) 
+      otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i])
+    }else{
+      otu.filt <- as.data.frame(t(otu_table(psIN)))
+      print("DADA2 table")
+      otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i])
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     if (dim(otu.filt)[2] == 2){
       next
