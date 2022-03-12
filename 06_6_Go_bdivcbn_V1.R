@@ -13,6 +13,9 @@ Go_bdivcbn <- function(psIN, metaData, project, orders, distance_metrics,
   if(!file_test("-d", out)) dir.create(out)
   out_path <- file.path(sprintf("%s_%s/pdf",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_path)) dir.create(out_path)
+  out_ordi <- file.path(sprintf("%s_%s/table/odination",project, format(Sys.Date(), "%y%m%d"))) 
+  if(!file_test("-d", out_ordi)) dir.create(out_ordi)
+  
   #meta data
   metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
   metadata <- as.data.frame(t(metadataInput))
@@ -122,8 +125,26 @@ Go_bdivcbn <- function(psIN, metaData, project, orders, distance_metrics,
         ord_meths= plot # c("DCA", "CCA", "RDA", "DPCoA", "NMDS","PCoA")
         plist = llply(as.list(ord_meths), function(i, psIN.cbn.na, distance_metric){
           ordi = ordinate(psIN.cbn.na, method=i, distance=distance_metric)
+          saveRDS(ordi,sprintf("%s/ordi.%s.%s.%s.%s.%s%s%s%s%s.rds",out_ordi,
+                               project,
+                               i, 
+                               distance_metric,
+                               mvar, 
+                               ifelse(length(group.combination) == 2, paste(group.combination[1],group.combination[2],sep = "_vs_"), ""),
+                               ifelse(length(group.combination) == 3, paste(group.combination[1],group.combination[2],
+                                                                            group.combination[3],sep = "_vs_"), ""),
+                               ifelse(length(group.combination) == 4, paste(group.combination[1],group.combination[2],
+                                                                            group.combination[3],group.combination[4],sep = "_vs_"), ""),
+                               ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+                               format(Sys.Date(), "%y%m%d")))
+          
+          
+          ifelse(length(group.combination) == 2, paste(group.combination[1],group.combination[2],sep = "_vs_"), "")
+          
           plot_ordination(psIN.cbn.na, ordi, type = "samples", color= mvar)
         }, psIN.cbn.na, distance_metric)
+        
+        
         
         names(plist) <- ord_meths
         

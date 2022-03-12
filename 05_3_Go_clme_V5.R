@@ -30,6 +30,10 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
   metadata <- as.data.frame(t(metadataInput))
   
     # logic for out file
+    # "name" definition
+  if (class(name) == "function"){
+    name <- NULL
+  }
   pdf(sprintf("%s/clme.%s.%s(%s.%s).%s.pdf", out_path, 
               project, 
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 

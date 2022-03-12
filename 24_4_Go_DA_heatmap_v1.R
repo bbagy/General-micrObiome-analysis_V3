@@ -11,6 +11,10 @@ Go_DA_heat <- function(df, project, data_type, facet,groupby,font, alpha,beta, o
   if(!file_test("-d", out_path)) dir.create(out_path)
   
   # out file
+  # "name" definition
+  if (class(name) == "function"){
+    name <- NULL
+  }
   pdf(sprintf("%s/DA.heatmap.%s.%s%s(%s.%s).%s.pdf", out_path, 
               project, 
               ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 

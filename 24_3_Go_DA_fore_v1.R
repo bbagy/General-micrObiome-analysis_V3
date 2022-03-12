@@ -28,6 +28,10 @@ Go_DA_fore <- function(project,file_path, files,type, alpha, beta,font, name, he
   print(filenames)
   
   # out file
+    # "name" definition
+  if (class(name) == "function"){
+    name <- NULL
+  }
   pdf(sprintf("%s/DA.forest.%s.%s(%s.%s).%s.pdf", out_path, 
               project, 
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 

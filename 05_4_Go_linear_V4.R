@@ -22,6 +22,10 @@ Go_linear <- function(df, metaData, project, outcomes, maingroup, orders, name=N
   metadata <- as.data.frame(t(metadataInput))
 
   # out file
+  # "name" definition
+  if (class(name) == "function"){
+    name <- NULL
+  }
   pdf(sprintf("%s/linear.%s.%s.%s.%s.pdf", out_path, 
               project, 
               ifelse(is.null(maingroup), "", paste(maingroup, ".", sep = "")), 

@@ -362,6 +362,10 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
         print(ps.taxa.sig)
       }
       
+      # "name definition
+      if (class(name) == "function"){
+        name <- NULL
+      }
       
       write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/(%s.vs.%s).Sig%s.%s.%s%s%s%s.DA.csv",out_DA.Tab,
                                                                basline, 

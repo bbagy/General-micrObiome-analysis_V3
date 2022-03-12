@@ -17,6 +17,10 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
 
 
  # out file
+   # "name" definition
+  if (class(name) == "function"){
+    name <- NULL
+  }
   pdf(sprintf("%s/ordi.%s.%s%s%s.pdf", out_path, 
               project, 
               ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 

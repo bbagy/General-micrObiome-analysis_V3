@@ -1,7 +1,7 @@
 #' A Go_box_plot
 #'
 
-Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
+Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes, mycol,
                         statistics = "yes", parametric= "no", star="no",ylim =NULL,
                         title= NULL, facet= NULL, paired=NULL, name= NULL, 
                         xanlgle=90, combination, height, width, plotCols, plotRows){
@@ -252,7 +252,10 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes,
       }
     }
     # out file
-    
+    # "name" definition
+  if (class(name) == "function"){
+    name <- NULL
+  }
     pdf(sprintf("%s/boxCbn.%s.%s%s%s.%s.pdf", out_path, 
                 project, 
                 ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 

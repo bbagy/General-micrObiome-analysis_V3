@@ -221,7 +221,7 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
   class(annotation_col)
 
   if (showPhylum ==TRUE){
-    p <- ComplexHeatmap::pheatmap(matrix, scale= "row", 
+    p <- ComplexHeatmap::pheatmap(matrix, scale= "row", fontsize =8,
                                   main = title,
                                   annotation_col = annotation_col, 
                                   annotation_row = annotation_row, 
@@ -232,7 +232,7 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
                                   labels_row=taxaTab$Species,
                                   annotation_colors = ann_colors)
   }  else{
-    p <- ComplexHeatmap::pheatmap(matrix, scale= "row", 
+    p <- ComplexHeatmap::pheatmap(matrix, scale= "row", fontsize =8,
                                   main = title,
                                   annotation_col = annotation_col, 
                                   #annotation_row = annotation_row, 
@@ -248,7 +248,7 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
   
   
   # logic for out file
-  pdf(sprintf("%s//pheatmap.%s.(%s).%s.%s.pdf", out_path, 
+  pdf(sprintf("%s//pheatmap.%s.(%s).%s%s.pdf", out_path, 
               project, 
               title,
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 

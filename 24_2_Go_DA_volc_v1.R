@@ -20,6 +20,11 @@ Go_DA_volc <- function(project, file_path,files, type,alpha,beta, name,font, hei
   print(filenames)
   
   # out file
+  # "name" definition
+  if (class(name) == "function"){
+    name <- NULL
+  }
+  
   pdf(sprintf("%s/DA.volcano.%s.%s(%s.%s).%s.pdf", out_path, 
               project, 
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 

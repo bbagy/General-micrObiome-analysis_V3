@@ -23,6 +23,10 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
 
  
   # out file
+  # "name" definition
+  if (class(name) == "function"){
+    name <- NULL
+  }
   pdf(sprintf("%s/box.%s.%s%s%s.pdf", out_path, 
               project, 
               ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 

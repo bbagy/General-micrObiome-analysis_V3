@@ -38,6 +38,10 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
   
   
   # logic for out file
+    # "name" definition
+  if (class(name) == "function"){
+    name <- NULL
+  }
   pdf(sprintf("%s/barchart.%s.%s%s(%s).%s.pdf", out_path, 
               project, 
               ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
@@ -98,7 +102,8 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
     agg[,taxanames[i]] <- genera
     #saving table
     agg_other_out <- subset(agg, agg[,taxanames[i]] != "[1_#Other]")
-    write.csv(agg_other_out, quote = FALSE, col.names = NA, file=sprintf("%s/%s.taxa_abundance.(%s).%s.%s.csv", out_taxa, project, cutoff,taxanames[i], format(Sys.Date(), "%y%m%d"),project,format(Sys.Date(), "%y%m%d"),sep="/"))
+    write.csv(agg_other_out, quote = FALSE, col.names = NA, file=sprintf("%s/%s.taxa_abundance.(%s).%s.%s.csv", out_taxa,
+                                                                         project,cutoff,taxanames[i],format(Sys.Date(),"%y%m%d"))) #,sep="/"
     
     df <- melt(agg, variable="SampleID")
 
@@ -160,7 +165,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
         coln <- 5
       }
     } else if (legend == "right") {
-      if (colourCount < 18) {
+      if (colourCount <= 18) {
         coln <- 1
       } else if (colourCount > 19 & colourCount  < 35) {
         coln <- 2
@@ -173,8 +178,11 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
     # df2 <- df2[order(df2$value, decreasing=T),]
     print(2)
 
-    p <- ggplot(df2, aes_string(x= x_label, y="value", fill=taxanames[i], order=taxanames[i])) + geom_bar(stat="identity", position="stack") + theme_classic()  + labs(fill=NULL)+
-      theme(legend.position=legend, legend.text=element_text(size=8), axis.title.x = element_blank(), axis.text.x = element_text(angle=90, vjust=0.5, hjust=1, size=8)) + 
+    p <- ggplot(df2, aes_string(x= x_label, y="value", fill=taxanames[i], order=taxanames[i])) + 
+      geom_bar(stat="identity", position="stack") + theme_classic()  + labs(fill=NULL)+
+      theme(legend.position=legend, # legend.text=element_text(size=8), 
+            legend.text = element_text(face = c(rep("italic", 5), rep("plain", 5))),
+            axis.title.x = element_blank(), axis.text.x = element_text(angle=90, vjust=0.5, hjust=1, size=8)) + 
       guides(fill=guide_legend(ncol= coln))  + #guides(col = guide_legend(ncol = coln)) + 
       ylim(c(-.1, 1.01)) + scale_fill_manual(values = getPalette(colourCount)) + labs(y = "Relative abundance")
     
