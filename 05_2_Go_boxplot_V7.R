@@ -1,7 +1,7 @@
 #' A Go_box_plot
 #'
 
-Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
+Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol, 
                         statistics = "yes", parametric= "no", star="no",ylim =NULL,
                         title= NULL, facet= NULL, paired=NULL, name= NULL, 
                         xanlgle=90,  height, width, plotCols, plotRows){
@@ -121,7 +121,7 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,
       p1 <- ggplot(adiv.na, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
         theme_bw() + theme(strip.background = element_blank()) +
         theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5),
-              plot.title=element_text(size=9,face="bold")) +  
+              plot.title=element_text(size=9,face="bold"))  
          # scale_color_brewer(palette=colorset)
       scale_color_manual(values = mycols)
 
