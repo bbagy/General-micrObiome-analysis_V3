@@ -162,7 +162,8 @@ Go_emptyMap <- function(psIN, project){
   column.names <- c("StudyID", "Variation1", "Variation2","etc")
   col.count <- length(column.names)
   
-  analysis <- c("type",	"baseline",	"Go_barchart", 	"Go_overview",	"Go_box",	"Go_linear","Go_clme", "Go_reg",	 "Go_bdiv",	"Go_perm","Go_mirkat",	"Go_deseq2","Go_ancombc", "Go_lmem","Confounder")
+  # 	"Go_overview","Go_ancombc",
+  analysis <- c("type",	"baseline",	"Go_barchart", 	"Go_box",	"Go_linear","Go_clme", "Go_reg", "Go_bdiv",	"Go_perm","Go_mirkat",	"Go_deseq2", "Go_lmem","Confounder")
   row.count <- length(analysis)
   
   emptyMetadata <- data.frame(matrix(ncol = col.count, nrow = row.count))
@@ -549,24 +550,17 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
     tt <- try(otu.filt[,rank]  <- getTaxonomy(otus=rownames(otu.filt), taxRanks = colnames(tax_table(psIN)), tax_tab=tax_table(psIN), level=rank),T)
     
     if(class(tt) == "try-error"){
-      print("other table")
-      otu.filt <- as.data.frame(otu_table(psIN)) 
+      print("DADA2 table")
+      otu.filt <- as.data.frame(t(otu_table(psIN))) 
       otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i])
     }else{
-      otu.filt <- as.data.frame(t(otu_table(psIN)))
-      print("DADA2 table")
+      otu.filt <- as.data.frame(otu_table(psIN)) 
+      print("other table")
       otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i])
     }
     
     
-    
-    
-    
-    
-    
-    
-    
-    
+
     
     if (dim(otu.filt)[2] == 2){
       next

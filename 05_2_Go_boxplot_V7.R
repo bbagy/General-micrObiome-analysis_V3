@@ -123,7 +123,16 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol,
         theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5),
               plot.title=element_text(size=9,face="bold"))  
          # scale_color_brewer(palette=colorset)
-      scale_color_manual(values = mycols)
+      
+
+
+      
+      if(!is.null(mycol)){
+        p1 <- p1 + scale_color_manual(values = mycols)
+      }else{
+        p1 <- p1
+      }
+    
 
       
       

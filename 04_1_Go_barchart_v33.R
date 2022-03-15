@@ -64,24 +64,17 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
     tt <- try(otu.filt[,rank]  <- getTaxonomy(otus=rownames(otu.filt), taxRanks = colnames(tax_table(psIN)), tax_tab=tax_table(psIN), level=rank),T)
     
     if(class(tt) == "try-error"){
-      print("other table")
-      otu.filt <- as.data.frame(otu_table(psIN)) 
+      print("DADA2 table")
+      otu.filt <- as.data.frame(t(otu_table(psIN))) 
       otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i])
     }else{
-      otu.filt <- as.data.frame(t(otu_table(psIN)))
-      print("DADA2 table")
+      otu.filt <- as.data.frame(otu_table(psIN)) 
+      print("other table")
       otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i])
     }
     
     
-    
-    
-    
-    
-    
-    
-    
-    
+
     
     if (dim(otu.filt)[2] == 2){
       next
