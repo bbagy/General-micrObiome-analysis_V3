@@ -59,13 +59,13 @@ cat(blue("#--------------------------------------------------------------# \n"))
 cat(blue("#------       General analysis Of microbiome (Go)        ------# \n"))
 cat(blue("#------    Quick statistics and visualization tools      ------# \n"))
 cat(blue("#--------------------------------------------------------------# \n"))
-cat(red("                                      Version: Go_tools.2.8.6 \n"))
+cat(red("                                      Version: Go_tools.2.9.0 \n"))
 cat("                                              Write by Heekuk \n")
 cat(yellow("All the required packages were installed.\n"))
 cat(yellow("All the required packages were loaded.\n"))
 cat(blue("#--------------------------------------------------------------# \n"))
 
-#mycols = c("#1170aa", "#fc7d0b",  "#76B7B2", "#B07AA1", "#E15759","#59A14F","#EDC948", "#FF9DA7", "#9C755F", "#BABOAC") # Tableau10
+#mycols = c("#1170aa", "#fc7d0b",  "#76B7B2", "#B07AA1", "#E15759","#59A14F","#EDC948", "#FF9DA7", "#9C755F", "#BAB0AC") # Tableau10
 
   # plot color
   # colorset = "Dark2" # Dark2 Set1 Paired#' A Go_huamnn2ps
@@ -162,7 +162,8 @@ Go_emptyMap <- function(psIN, project){
   column.names <- c("StudyID", "Variation1", "Variation2","etc")
   col.count <- length(column.names)
   
-  analysis <- c("type",	"baseline",	"Go_barchart", 	"Go_overview",	"Go_box",	"Go_linear","Go_clme", "Go_reg",	 "Go_bdiv",	"Go_perm","Go_mirkat",	"Go_deseq2","Go_ancombc", "Go_lmem","Confounder")
+  # 	"Go_overview","Go_ancombc",
+  analysis <- c("type",	"baseline",	"Go_barchart", 	"Go_box",	"Go_linear","Go_clme", "Go_reg", "Go_bdiv",	"Go_perm","Go_mirkat",	"Go_deseq2", "Go_lmem","Confounder")
   row.count <- length(analysis)
   
   emptyMetadata <- data.frame(matrix(ncol = col.count, nrow = row.count))
@@ -493,14 +494,12 @@ Go_qq <- function(psIN, project, alpha_metrics, name, height, width){
 #' Go_barchart()
 
 
-Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  
+Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  mycols=NULL, relative = T,
                         x_label="SampleIDfactor", facet=NULL, legend="bottom", orders,
                         cutoff=0.005, name=NULL, ncol=11, height, width,plotCols,  plotRows){
     
   if(!is.null(dev.list())) dev.off()
   
-  colorset = "Set1" # Dark1 Set1 Paired
-  #taxRanks <- c("Phylum","Class","Order","Family", "Genus","Species")
   
   taxRanks <- taxanames
   
@@ -534,6 +533,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
               cutoff,
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
   
+  
   # order by bdiv
 
   ordi <- ordinate(psIN , method = "PCoA", distance = "bray")
@@ -545,28 +545,21 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
   for(i in 1:length(taxanames)){
 
     # try table type
-    otu.filt <- as.data.frame(t(otu_table(psIN)))
-    tt <- try(otu.filt[,rank]  <- getTaxonomy(otus=rownames(otu.filt), taxRanks = colnames(tax_table(psIN)), tax_tab=tax_table(psIN), level=rank),T)
+    otu.filt <- as.data.frame(otu_table(psIN)) 
+    tt <- try(otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i]),T)
     
     if(class(tt) == "try-error"){
-      print("other table")
-      otu.filt <- as.data.frame(otu_table(psIN)) 
+      print("DADA2 table")
+      otu.filt <- as.data.frame(t(otu_table(psIN))) 
       otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i])
     }else{
-      otu.filt <- as.data.frame(t(otu_table(psIN)))
-      print("DADA2 table")
+      otu.filt <- as.data.frame(otu_table(psIN)) 
+      print("other table")
       otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i])
     }
     
     
-    
-    
-    
-    
-    
-    
-    
-    
+
     
     if (dim(otu.filt)[2] == 2){
       next
@@ -579,18 +572,34 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
      
     }
     
-    genera <- agg[,taxanames[i]]
-    agg <- agg[,-1]
-    agg <- normalizeByCols(agg)
-    inds_to_grey <- which(rowMeans(agg) < cutoff)
-    genera[inds_to_grey] <- "[1_#Other]"
-    agg[,taxanames[i]] <- genera
-    #saving table
-    agg_other_out <- subset(agg, agg[,taxanames[i]] != "[1_#Other]")
-    write.csv(agg_other_out, quote = FALSE, col.names = NA, file=sprintf("%s/%s.taxa_abundance.(%s).%s.%s.csv", out_taxa,
-                                                                         project,cutoff,taxanames[i],format(Sys.Date(),"%y%m%d"))) #,sep="/"
     
-    df <- melt(agg, variable="SampleID")
+    if (relative == TRUE){
+      genera <- agg[,taxanames[i]]
+      agg <- agg[,-1]
+      agg <- normalizeByCols(agg)
+      inds_to_grey <- which(rowMeans(agg) < cutoff)
+      genera[inds_to_grey] <- "[1_#Other]"
+      agg[,taxanames[i]] <- genera
+      #saving table
+      agg_other_out <- subset(agg, agg[,taxanames[i]] != "[1_#Other]")
+      write.csv(agg_other_out, quote = FALSE, col.names = NA, file=sprintf("%s/%s.taxa_relative_abundance.(%s).%s.%s.csv", out_taxa,
+                                                                           project,cutoff,taxanames[i],format(Sys.Date(),"%y%m%d"))) #,sep="/"
+      df <- melt(agg, variable="SampleID")
+    }else if(relative == FALSE){
+      genera <- agg[,taxanames[i]]
+      agg <- agg[,-1]
+      agg.rel <- normalizeByCols(agg)
+      inds_to_grey <- which(rowMeans(agg.rel) < cutoff)
+      genera[inds_to_grey] <- "[1_#Other]"
+      agg[,taxanames[i]] <- genera
+      #saving table
+      agg_other_out <- subset(agg, agg[,taxanames[i]] != "[1_#Other]")
+      write.csv(agg_other_out, quote = FALSE, col.names = NA, file=sprintf("%s/%s.taxa_absolute_abundance.(%s).%s.%s.csv", out_taxa,
+                                                                           project,cutoff,taxanames[i],format(Sys.Date(),"%y%m%d"))) #,sep="/"
+      df <- melt(agg, variable="SampleID")
+    }
+    
+
 
 
     # add StduyID
@@ -620,6 +629,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
     # adding facet to groups
     if (!is.null(facet)) {
       for (fa in facet){
+        rownames(mapping.sel) <- as.character(rownames(mapping.sel))
         df.SampleIDstr$Group <- as.character(mapping.sel[df.SampleIDstr$SampleID, fa])
         df2[,fa] <- mapping.sel[df2$SampleID, fa]
         df2[,fa] <- factor(df2[,fa], levels = orders)
@@ -639,8 +649,18 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
     print(1)
     # color
     colourCount = length(unique(df2[,taxanames[i]]));colourCount
-    getPalette = colorRampPalette(brewer.pal(9, colorset))
-
+    
+    if(!is.null(mycols)){
+      getPalette = colorRampPalette(mycols)
+    }else{
+      p=p
+    }
+    
+    
+    
+    
+    
+    
     # pdf size height = 5, width=9
    
     if (legend == "bottom"){
@@ -668,10 +688,26 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
       theme(legend.position=legend, # legend.text=element_text(size=8), 
             legend.text = element_text(face = c(rep("italic", 5), rep("plain", 5))),
             axis.title.x = element_blank(), axis.text.x = element_text(angle=90, vjust=0.5, hjust=1, size=8)) + 
-      guides(fill=guide_legend(ncol= coln))  + #guides(col = guide_legend(ncol = coln)) + 
-      ylim(c(-.1, 1.01)) + scale_fill_manual(values = getPalette(colourCount)) + labs(y = "Relative abundance")
+      guides(fill=guide_legend(ncol= coln))   #guides(col = guide_legend(ncol = coln)) + 
+      
+    
+    
+    if (relative == TRUE){
+      p <- p + labs(y = "Relative abundance") + ylim(c(-.1, 1.01))
+    }else if(relative == FALSE){
+      p <- p + labs(y = "Absolute abundance")
+    }
+    
     
 
+    if(!is.null(mycols)){
+      p=p + scale_fill_manual(values = getPalette(colourCount)) 
+    }else{
+      p=p
+    }
+    
+    
+    
     if (!is.null(facet)) {
       for (mvar in rownames(subset(metadata, Go_barchart =="yes"))) {
         if (class(ncol) == "numeric") {
@@ -744,6 +780,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
   }
   dev.off()
 }
+
 #' A Go_overview
 #'
 #' This function allows you to express your love of cats.
@@ -1101,15 +1138,15 @@ Go_adiv <- function(psIN, project, alpha_metrics){
 #' A Go_box_plot
 #'
 
-Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol, 
-                        statistics = "yes", parametric= "no", star="no",ylim =NULL,
-                        title= NULL, facet= NULL, paired=NULL, name= NULL, 
-                        xanlgle=90,  height, width, plotCols, plotRows){
-
-  if(!is.null(dev.list())) dev.off()
-
+Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycols=NULL, 
+                       statistics = "yes", parametric= "no", star="no",ylim =NULL,
+                       title= NULL, facet= NULL, paired=NULL, name= NULL, 
+                       xanlgle=90,  height, width, plotCols, plotRows){
   
-
+  if(!is.null(dev.list())) dev.off()
+  
+  
+  
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out)) dir.create(out)
@@ -1120,8 +1157,8 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol,
   #meta data
   metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
   metadata <- as.data.frame(t(metadataInput))
-
- 
+  
+  
   # out file
   # "name" definition
   if (class(name) == "function"){
@@ -1132,7 +1169,7 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol,
               ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
-
+  
   ## fix factor  and  numeric
   df$etc <- NULL
   for (var in rownames(subset(metadata, Go_box =="yes"))) {
@@ -1160,13 +1197,13 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol,
     
     # remove Na
     adiv <- data.frame(df)
-
+    
     adiv[,mvar] <- as.character(adiv[,mvar]);adiv[,mvar]
     adiv[,mvar][adiv[,mvar]==""] <- "NA";adiv[,mvar]
     adiv.na <- subset(adiv, adiv[,mvar] != "NA");adiv.na[,mvar]  # subset 를 사용한 NA 삭제
     adiv.na[,mvar] <- as.factor(adiv.na[,mvar]);adiv.na[,mvar]  
     
-  
+    
     
     print(sprintf("##-- %s (total without NA: %s/%s) --##", 
                   mvar, dim(adiv.na)[1], dim(adiv)[1]))
@@ -1179,7 +1216,7 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol,
     
     # make a comnination for stat
     cbn <- combn(x = levels(adiv.na[,mvar]), m = 2)
-
+    
     my_comparisons <- {}
     for(i in 1:ncol(cbn)){
       x <- cbn[,i]
@@ -1216,32 +1253,32 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol,
           adiv.na[,fc] <- factor(adiv.na[,fc], levels = orders)
         }
       }
-
+      
       
       p1 <- ggplot(adiv.na, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
         theme_bw() + theme(strip.background = element_blank()) +
         theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5),
               plot.title=element_text(size=9,face="bold"))  
-         # scale_color_brewer(palette=colorset)
+      # scale_color_brewer(palette=colorset)
       
-
-
       
-      if(!is.null(mycol)){
-        p1 <- p1 + scale_color_manual(values = mycol)
+      
+      
+      if(!is.null(mycols)){
+        p1 <- p1 + scale_color_manual(values = mycols)
       }else{
         p1 <- p1
       }
-    
-
+      
+      
       
       
       # Close an image
-        if (!is.null(title)) {
-          p1 <- p1 + ggtitle(title)
-        } else{
-          p1 <- p1 + ggtitle(sprintf("%s", mvar))
-        }
+      if (!is.null(title)) {
+        p1 <- p1 + ggtitle(title)
+      } else{
+        p1 <- p1 + ggtitle(sprintf("%s", mvar))
+      }
       
       if (statistics == "yes"| statistics == "YES"|statistics == "Yes"){
         if (star == "no") {  
@@ -1263,7 +1300,7 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol,
         dot.size = 1.5
         box.tickness = 0.5
       }
-
+      
       # y axis limit      
       if(oc == "Shannon"){
         if(!is.null(ylim)){
@@ -1272,12 +1309,12 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol,
           p1=p1
         }
       }
-
+      
       # paired plot type
-       if (!is.null(paired)) {
+      if (!is.null(paired)) {
         p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
         p1 = p1 + geom_point(aes_string(fill=mvar,group=paired),alpha = 0.8, size = dot.size, position = position_dodge(0.3), show.legend = F)   #scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
-          p1 = p1 + geom_line(aes_string(group=paired), color="grey50", size=0.3,position = position_dodge(0.3)) 
+        p1 = p1 + geom_line(aes_string(group=paired), color="grey50", size=0.3,position = position_dodge(0.3)) 
         p1 = p1  + theme(legend.title = element_blank(), legend.position="bottom", legend.justification="left",legend.box.margin = ggplot2::margin(0,0,0,-1,"cm")) 
         
       } else{
@@ -1288,10 +1325,10 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol,
         } else{
           p1 = p1
         }
-
+        
       } 
       
-
+      
       
       # facet
       if (length(facet) >= 1) {
@@ -1308,7 +1345,6 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol,
   multiplot(plotlist=plotlist, cols=plotCols, rows=plotRows)
   dev.off()
 }
-
 #' A Go_clme
 #'
 #' This function allows you to express your love of cats.
@@ -1319,7 +1355,7 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol,
 #' Go_clme()
 
 
-Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
+Go_clme <- function(psIN, metaData, project, paired, mycols=NULL, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
@@ -1462,8 +1498,16 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
             geom_line(color="grey",size=line.tickness) + geom_point(alpha = 0.8, size = dot.size) + 
             xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + 
             ggtitle(sprintf("%s-%s \n (%s) ", mvar, des, clme.globalp))   + theme_bw() +
-            theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" ) +
-            scale_color_manual(values = mycols)
+            theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" ) 
+
+
+           if(!is.null(mycol)){
+           p <- p + scale_color_manual(values = mycols)
+           }else{
+           p <- p
+           }
+
+
           
           if (length(ID) == 1) {
             p= p + geom_text_repel(aes_string(label = ID), size = 2)
@@ -1488,7 +1532,7 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
 #' @export
 #' @examples
 
-Go_linear <- function(df, metaData, project, outcomes, maingroup, orders, name=NULL, height, width, plotCols, plotRows){
+Go_linear <- function(df, metaData, project, outcomes, mycols, maingroup, orders, name=NULL, height, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
@@ -1573,7 +1617,6 @@ Go_linear <- function(df, metaData, project, outcomes, maingroup, orders, name=N
       
      p <- p + theme_classic() + geom_point(size = 0.5) + 
        # scale_colour_brewer(palette = colorset) + 
-       scale_color_manual(values = mycols) +
         geom_smooth(method = my.method, formula = my.formula, linetype="solid", fill="lightgrey", se=T, size=0.5 ) + 
         ggtitle(sprintf("%s with %s", mvar, outcomes[i])) + theme(title=element_text(size=10)) + labs(x = NULL)+
         theme(title=element_text(size=10),
@@ -1586,6 +1629,12 @@ Go_linear <- function(df, metaData, project, outcomes, maingroup, orders, name=N
                                             stat(r.squared), stat(p.value))),
                         parse = TRUE, size = 3)
       
+      if(!is.null(mycol)){
+        p <- p + scale_color_manual(values = mycols)
+      }else{
+        p <- p
+      }
+
 
 
       plotlist[[length(plotlist)+1]] <- p
@@ -1952,27 +2001,27 @@ Go_dualYplot <- function(df, TaxTab, metaData, project, orders=NULL, Box, Line1,
 #'
 
 Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes, mycols=NULL,
-                        statistics = "yes", parametric= "no", star="no",ylim =NULL,
-                        title= NULL, facet= NULL, paired=NULL, name= NULL, 
-                        xanlgle=90, combination, height, width, plotCols, plotRows){
-
+                      statistics = "yes", parametric= "no", star="no",ylim =NULL,
+                      title= NULL, facet= NULL, paired=NULL, name= NULL, 
+                      xanlgle=90, combination, height, width, plotCols, plotRows){
+  
   if(!is.null(dev.list())) dev.off()
-
+  
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out)) dir.create(out)
   out_path <- file.path(sprintf("%s_%s/pdf",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_path)) dir.create(out_path)
-
+  
   set.seed(151) 
   
   #meta data
   metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
   metadata <- as.data.frame(t(metadataInput))
-
- 
-
-
+  
+  
+  
+  
   ## fix factor  and  numeric
   df$etc <- NULL
   for (var in rownames(subset(metadata, Go_box =="yes"))) {
@@ -2000,13 +2049,13 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes, mycols=NULL,
     
     # remove Na
     adiv <- data.frame(df)
-
+    
     adiv[,mvar] <- as.character(adiv[,mvar]);adiv[,mvar]
     adiv[,mvar][adiv[,mvar]==""] <- "NA";adiv[,mvar]
     adiv.na <- subset(adiv, adiv[,mvar] != "NA");adiv.na[,mvar]  # subset 를 사용한 NA 삭제
     adiv.na[,mvar] <- as.factor(adiv.na[,mvar]);adiv.na[,mvar]  
     
-  
+    
     
     print(sprintf("##-- %s (total without NA: %s/%s) --##", 
                   mvar, dim(adiv.na)[1], dim(adiv)[1]))
@@ -2067,13 +2116,13 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes, mycols=NULL,
       }
       
       unique(adiv.cbn[,mvar])
-
+      
       
       # make a comnination for stat
       adiv.cbn[,mvar] <- factor(adiv.cbn[,mvar])
       cbn <- combn(x = levels(adiv.cbn[,mvar]), m = 2)
       
-
+      
       my_comparisons <- {}
       for(i in 1:ncol(cbn)){
         x <- cbn[,i]
@@ -2084,7 +2133,7 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes, mycols=NULL,
         combination.N <- combination - 1
         my_comparisons <- my_comparisons[1:combination.N]
       }
-        
+      
       
       
       # check statistics method
@@ -2121,9 +2170,9 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes, mycols=NULL,
         p1 <- ggplot(adiv.cbn, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
           theme_bw() + theme(strip.background = element_blank()) +
           theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5),
-          plot.title=element_text(size=9,face="bold")) 
-          # scale_color_brewer(palette=colorset)
-
+                plot.title=element_text(size=9,face="bold")) 
+        # scale_color_brewer(palette=colorset)
+        
         
         if(!is.null(mycols)){
           p1 <- p1 + scale_color_manual(values = mycols)
@@ -2175,11 +2224,11 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes, mycols=NULL,
           p1 = p1 + geom_point(aes_string(fill=mvar,group=paired),alpha = 0.8, size = dot.size, position = position_dodge(0.3),show.legend = F)  #scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
           p1 = p1 + geom_line(aes_string(group=paired), color="grey50", size=0.3,position = position_dodge(0.3)) 
           p1 = p1  + theme(legend.title = element_blank(), legend.position="bottom", legend.justification="left",legend.box.margin = ggplot2::margin(0,0,0,-1,"cm")) 
-                                                                 
+          
         }  else{
           p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
           
-
+          
           # count or table for number of variable
           
           if (max(table(adiv.cbn[,mvar])) > 250 & max(table(adiv.cbn[,mvar])) < 500){
@@ -2208,9 +2257,9 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes, mycols=NULL,
     }
     # out file
     # "name" definition
-  if (class(name) == "function"){
-    name <- NULL
-  }
+    if (class(name) == "function"){
+      name <- NULL
+    }
     pdf(sprintf("%s/boxCbn.%s.%s%s%s.%s.pdf", out_path, 
                 project, 
                 ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
@@ -2227,7 +2276,8 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes, mycols=NULL,
 #'
 
 
-Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NULL, name=NULL, height, width){
+Go_bdiv <- function(psIN, metaData, project, orders, mycols=NULL,
+distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NULL, name=NULL, height, width){
     
   if(!is.null(dev.list())) dev.off()
    
@@ -2347,7 +2397,6 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
       
       p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
       p = p + facet_wrap(~ method, scales="free") + theme_bw() + theme(strip.background = element_blank())# open(1), cross(10), closed(2)
-      p = p + scale_color_manual(values = mycols)
       p = p + theme(legend.position = "bottom", 
                     legend.title = element_blank(),
                     legend.justification="left", 
@@ -2355,7 +2404,12 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
                     legend.box.margin = ggplot2::margin(0,0,0,-1,"cm"),
                     plot.title=element_text(size=9,face="bold"))
       
-      
+      if(!is.null(mycols)){
+        p <- p + scale_color_manual(values = mycols)
+      }else{
+        p <- p
+      }
+
       # ID variation
       if (!is.null(ID)) {
         p = p + geom_text_repel(aes_string(label = ID), size = 2)
@@ -2874,7 +2928,7 @@ Go_dist_plot <- function(psIN, project, distance_metrics, distance, group,orders
 #'
 
 
-Go_bdivcbn <- function(psIN, metaData, project, orders, distance_metrics,
+Go_bdivcbn <- function(psIN, metaData, project, orders, distance_metrics, mycols=NULL, 
                        plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NULL, name=NULL,
                        combination, height, width){
     
@@ -3047,12 +3101,19 @@ Go_bdivcbn <- function(psIN, metaData, project, orders, distance_metrics,
         
         p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
         p = p + facet_wrap(~ method, scales="free") + theme_bw() + theme(strip.background = element_blank())# open(1), cross(10), closed(2)
-        p = p + scale_color_manual(values = mycols)
         p = p + theme(legend.position = "bottom", 
                       legend.title = element_blank(),
                       legend.justification="left", 
                       legend.box = "vertical",
                       legend.box.margin = ggplot2::margin(0,0,0,-1,"cm"))
+
+
+      if(!is.null(mycols)){
+        p <- p + scale_color_manual(values = mycols)
+      }else{
+        p <- p
+      }
+    
         
         
         # ID variation
@@ -7710,7 +7771,7 @@ Go_ancombc <- function(psIN,project, metaData, adjust,taxanames,filter,name){
 }
 
 
-Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL, name=NULL,
+Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NULL,Ntax=NULL, name=NULL,
                         show_rownames = T,show_colnames = F,type,showPhylum = T,
                         cluster_rows = T,cluster_cols = T, 
                         width){
@@ -7731,12 +7792,11 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
   
   #----- normalization relative abundant ---#
   # option 1
-  # ps.rel <- transform_sample_counts(psIN.prune, function(x) x/sum(x)*100);ps.rel
+   ps.rel <- transform_sample_counts(psIN.prune, function(x) x/sum(x)*100);ps.rel
   # option 2
-   ps.rel <- transform_sample_counts(psIN.prune, function(x) log2(x/sum(x)*100));ps.rel
+   #ps.rel <- transform_sample_counts(psIN.prune, function(x) log2(x/sum(x)*100));ps.rel
 
-  
-  
+   
   if(is.null(Ntax)){
     Ntax <- dim(tax_table(ps.rel))[1]
     print(sprintf("number of taxa is %s",Ntax))
@@ -7764,6 +7824,8 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
    
   
   matrix <- data.frame(t(otu_table(ps.rel.sel)))
+  
+  
   # normalization for log2
   is.na(matrix)<-sapply(matrix, is.infinite)
   matrix[is.na(matrix)]<-0
@@ -7771,6 +7833,10 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
   matrix <- matrix[,colSums(is.na(matrix))<nrow(matrix)]
   colnames(matrix) <- gsub("X","",colnames(matrix))
   
+  
+  
+  
+ 
   if(type == "taxonomy" | type == "taxanomy" ){
     taxaTab <- data.frame(tax_table(ps.rel.sel)[,"Species"])
   }else if(type == "function"){
@@ -7840,15 +7906,16 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
 
   
   # add group(s) and color list
-  if (!is.null(group2)){
+  if (!is.null(group2) & is.null(group3)){
     annotation_col = data.frame(
       group1 = as.factor(mapping.sel[,group1]), 
       group2 = as.factor(mapping.sel[,group2]), 
-      check.names = FALSE
-    )
+    ) 
+    
     colnames(annotation_col) <-c(group1, group2)
     
     # group colors
+    
     if (length(unique(mapping.sel[,group1])) > 8){
       getPalette = colorRampPalette(brewer.pal(8, "Set2"))
       group1.col <- getPalette(length(unique(mapping.sel[,group1])))
@@ -7883,6 +7950,52 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
       names(ann_colors) <-c(group1, group2,"Path")
     }
     
+  } else if (!is.null(group2) & !is.null(group3)){
+    annotation_col = data.frame(
+      group1 = as.factor(mapping.sel[,group1]), 
+      group2 = as.factor(mapping.sel[,group2]), 
+      group3 = as.factor(mapping.sel[,group3]), 
+    )
+    
+    colnames(annotation_col) <-c(group1, group2,group3)
+    
+    # group colors
+    
+    if (length(unique(mapping.sel[,group1])) > 8){
+      getPalette = colorRampPalette(brewer.pal(8, "Set2"))
+      group1.col <- getPalette(length(unique(mapping.sel[,group1])))
+      names(Path_col) = levels(annotation_row$Path)
+      print(1)
+    } else{
+      group1.col <- head(brewer.pal(8, "Set2"),length(unique(mapping.sel[,group1])))
+      names(group1.col) = levels(as.factor(mapping.sel[,group1]))
+      print(2)
+    }
+    
+    group2.col <- head(brewer.pal(12, "Paired"),length(unique(mapping.sel[,group2])))
+    names(group2.col) <- unique(mapping.sel[,group2])
+    
+    group3.col <- head(brewer.pal(12, "Paired"),length(unique(mapping.sel[,group3])))
+    names(group3.col) <- unique(mapping.sel[,group3])
+    
+    # color list
+    if(type == "taxonomy" | type == "taxanomy" ){
+      ann_colors = list(
+        group1 = group1.col,
+        group2 = group2.col,
+        group3 = group3.col,
+        Phylum = phylum_col
+      )
+      names(ann_colors) <-c(group1, group2, "Phylum")
+    }else if(type == "function"){
+      ann_colors = list(
+        group1 = group1.col,
+        group2 = group2.col,
+        group3 = group3.col,
+        Path = Path_col
+      )
+      names(ann_colors) <-c(group1, group2,"Path")
+    }
   }else{
     annotation_col = data.frame(
       group1 = as.factor(mapping.sel[,group1]),
@@ -7920,15 +8033,16 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
     }
   }
   
+  
   rownames(annotation_col) = rownames(mapping.sel)
   
   if(type == "taxonomy" | type == "taxanomy" ){
-    matrix = t(as.matrix(matrix))
+    matrix = as.matrix(matrix)
   }else if(type == "function"){
     matrix<- t(matrix)
   }
   
-  class(annotation_col)
+  colSums(matrix)
 
   if (showPhylum ==TRUE){
     p <- ComplexHeatmap::pheatmap(matrix, scale= "row", fontsize =8,
@@ -7941,7 +8055,7 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
                                   cluster_cols = cluster_cols,
                                   labels_row=taxaTab$Species,
                                   annotation_colors = ann_colors)
-  }  else{
+  } else{
     p <- ComplexHeatmap::pheatmap(matrix, scale= "row", fontsize =8,
                                   main = title,
                                   annotation_col = annotation_col, 
@@ -7955,7 +8069,16 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
   }
 
   
-  
+  ComplexHeatmap::pheatmap(matrix, scale= "row", fontsize =8,
+                           main = title,
+                           annotation_col = annotation_col, 
+                           #annotation_row = annotation_row, 
+                           show_rownames = show_rownames,
+                           show_colnames = show_colnames,
+                           cluster_rows = cluster_rows,
+                           cluster_cols = cluster_cols,
+                           labels_row=taxaTab$Species,
+                           annotation_colors = ann_colors)
   
   # logic for out file
   pdf(sprintf("%s//pheatmap.%s.(%s).%s%s.pdf", out_path, 
@@ -8014,30 +8137,6 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
     psIN <- psIN
   }
 
-  
-  
-  # 최근 버전 for unstrafied (20210112 확인)
-   if(type == "function"){
-    # remove colume sum 0 and psIN 재구성(20201027)
-    a <- data.frame(otu_table(psIN))*10000
-    a.ceiling <- ceiling(a[-c(99),])
-    b <- a.ceiling[, -which(numcolwise(sum)(a.ceiling) < 1)]
-    if (length(b) == 0){
-      OTU.sta <- otu_table(a, taxa_are_rows = TRUE);head(OTU.sta)
-      colnames(OTU.sta) <- gsub("X", "", colnames(OTU.sta))
-      otu_table(psIN) <-  OTU.sta
-    }else if(length(b) > 1){
-      OTU.sta <- otu_table(b, taxa_are_rows = TRUE);head(OTU.sta)
-      colnames(OTU.sta) <- gsub("X", "", colnames(OTU.sta))
-      otu_table(psIN) <-  OTU.sta
-    }
-  }else if(type == "taxanomy"){
-    psIN <- psIN
-  }else if(type == "bacmet"){
-    psIN <- psIN
-  }
-
-  
   
   # start
   res <- {}
@@ -8263,35 +8362,7 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
             }
           }
         }
-      } else if(type == "function"){
-        for(taxa in c("KO", "KO.des","Path","Path.des")){
-          res[,taxa] == "NA"
-          res[,taxa]<- as.character(res[,taxa])
-          res[,taxa][is.na(res[,taxa])] <- "__"
-          for(i in 1:length(res[,taxa])){
-            if (res[,taxa][i] == "s__" || res[,taxa][i] == "g__" || res[,taxa][i] == "f__" || res[,taxa][i] == "o__" || res[,taxa][i] == "c__"|| res[,taxa][i] == "p__"|| res[,taxa][i] == "__"){
-              res[,taxa][i] <- ""
-            }
-          }
-        }
-        print("pass4")
-        res$KOName <- paste(res$Path,"",res$KO)
-        res$ShortName <- paste(res$Path.des,"",res$KO.des)
-        
-        
-        unique(res$ShortName)
-        
-        # use last taxa name
-        for(taxa in c("KO", "KO.des","Path","Path.des")){
-          for(i in 1:length(res[,taxa])){
-            if (res$ShortName[i] != "  "){
-              next
-            }      else if (res$ShortName[i] == "  " & res[,taxa][i] != ""){
-              res$ShortName[i] <- paste(res[,taxa][i])
-            }
-          }
-        }
-      }else if(type == "bacmet"){
+      } else if(type == "bacmet"){
         for(taxa in c("Gene",	"Organism",	"Compound",	"NCBI_annotation")){
           res[,taxa] == "NA"
           res[,taxa]<- as.character(res[,taxa])
@@ -8368,7 +8439,7 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
 #'
 
 
-Go_DA_volc <- function(project, file_path,files, type,alpha,beta, name,font, height, width){
+Go_DA_volc <- function(project, file_path,files, type,alpha,beta,mycols=NULL, name,font, height, width){
     
   if(!is.null(dev.list())) dev.off()
    
@@ -8417,8 +8488,14 @@ Go_DA_volc <- function(project, file_path,files, type,alpha,beta, name,font, hei
     df.na$deseq2<- gsub('down',basline, gsub('up',smvar, df.na$deseq2))
     
     df.na$deseq2 <- factor(df.na$deseq2, levels = c(as.character(basline), "NS", as.character(smvar)))
+
+   if(!is.null(mycols)){
+    dircolors <- c(mycols[1], "grey",mycols[2]); names(dircolors) <- c(as.character(basline), "NS", as.character(smvar))
+    }else{
+     dircolors <- c("#f8766d", "grey","#7cae00"); names(dircolors) <- c(as.character(basline), "NS", as.character(smvar))
+    }
     
-    dircolors <- c("#1170aa", "grey","#fc7d0b"); names(dircolors) <- c(as.character(basline), "NS", as.character(smvar))
+    
 
     df.na$ancom[is.na(df.na$ancom)] <- FALSE
     ancomshape <- c(18,5); names(ancomshape) <- c(TRUE, FALSE)# 16,1,1
@@ -8467,7 +8544,7 @@ Go_DA_volc <- function(project, file_path,files, type,alpha,beta, name,font, hei
 #dircolors <- c("blue", "red", "grey"); names(dircolors) <- c("down", "up", "NS")
 
 
-Go_DA_fore <- function(project,file_path, files,type, alpha, beta,font, name, height, width){
+Go_DA_fore <- function(project,file_path, files,type, alpha, beta, mycols=NULL, font, name, height, width){
     
   if(!is.null(dev.list())) dev.off()
    
@@ -8531,8 +8608,14 @@ Go_DA_fore <- function(project,file_path, files,type, alpha, beta,font, name, he
     
     resSig.top$deseq2 <- factor(resSig.top$deseq2, levels = c(as.character(basline), "NS", as.character(smvar)))
     
-    dircolors <- c("#1170aa", "grey","#fc7d0b"); names(dircolors) <- c(as.character(basline), "NS", as.character(smvar))
+
+   if(!is.null(mycols)){
+    dircolors <- c(mycols[1], "grey",mycols[2]); names(dircolors) <- c(as.character(basline), "NS", as.character(smvar))
+    }else{
+     dircolors <- c("#f8766d", "grey","#7cae00"); names(dircolors) <- c(as.character(basline), "NS", as.character(smvar))
+    }
     
+
     
     resSig.top$ancom[is.na(resSig.top$ancom)] <- FALSE
     ancomshape <- c(18,5); names(ancomshape) <- c(TRUE, FALSE) # 16,1,1
@@ -8893,12 +8976,14 @@ Go_myCols <- function(custumCols, presetCols) {
   # reset colors
   # rm(list = ls()[grep("mycols", ls())])
   
+  if(!is.null(dev.list())) dev.off()
+
   # for custom
   if(is.null(custumCols) & is.null(presetCols)){
     
     cat("#=== Please select your colors. If not, basic color would be used. ===#","\n","\n", sep=" ")
     
-    cols1 <- c("#1170aa", "#fc7d0b",  "#76B7B2", "#B07AA1", "#E15759","#59A14F","#EDC948", "#FF9DA7", "#9C755F", "#BABOAC") # Tableau10
+    cols1 <- c("#1170aa", "#fc7d0b",  "#76B7B2", "#B07AA1", "#E15759","#59A14F","#EDC948", "#FF9DA7", "#9C755F", "#BAB0AC") # Tableau10
     cat("Custum Colors1: cols1","\n", cols1, "\n","\n", sep=" ")
     cat("Preset Colors:","\n", "Set3     Set2    Set1   Pastel2", "\n", "Pastel1  Paired  Dark2  Accent", "\n", sep=" ")
     
@@ -8908,8 +8993,10 @@ Go_myCols <- function(custumCols, presetCols) {
   
   if(!is.null(custumCols)){
     if(custumCols == "cols1"){
-      cols1 <- c("#1170aa", "#fc7d0b",  "#76B7B2", "#B07AA1", "#E15759","#59A14F","#EDC948", "#FF9DA7", "#9C755F", "#BABOAC") # Tableau10
+      cols1 <- c("#1170aa", "#fc7d0b",  "#76B7B2", "#B07AA1", "#E15759","#59A14F","#EDC948", "#FF9DA7", "#9C755F", "#BAB0AC") # Tableau10
       mycols <- cols1
+      
+      barplot(rep(1,length(cols1)), col=cols1, main= custumCols,yaxt="n")
       return(mycols)
     }
   }
@@ -8919,34 +9006,42 @@ Go_myCols <- function(custumCols, presetCols) {
   if(is.null(custumCols) & !is.null(presetCols)){
     if(presetCols == "Set1"){
       mycols <- brewer.pal(9, presetCols)
+      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
       cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Set2"){
       mycols <- brewer.pal(8, presetCols)
+      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
       cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Set3"){
       mycols <- brewer.pal(12, presetCols)
+      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
       cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Pastel2"){
       mycols <- brewer.pal(8, presetCols)
+      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
       cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Pastel1"){
       mycols <- brewer.pal(9, presetCols)
+      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
       cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Paired"){
       mycols <- brewer.pal(12, presetCols)
+      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
       cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Dark2"){
       mycols <- brewer.pal(8, presetCols)
+      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
       cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }else if(presetCols == "Accent"){
       mycols <- brewer.pal(8, presetCols)
+      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
       cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
       return(mycols)
     }

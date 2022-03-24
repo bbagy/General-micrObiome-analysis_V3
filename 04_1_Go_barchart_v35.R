@@ -8,14 +8,12 @@
 #' Go_barchart()
 
 
-Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  
+Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  mycols=NULL, relative = T,
                         x_label="SampleIDfactor", facet=NULL, legend="bottom", orders,
                         cutoff=0.005, name=NULL, ncol=11, height, width,plotCols,  plotRows){
     
   if(!is.null(dev.list())) dev.off()
   
-  colorset = "Set1" # Dark1 Set1 Paired
-  #taxRanks <- c("Phylum","Class","Order","Family", "Genus","Species")
   
   taxRanks <- taxanames
   
@@ -49,6 +47,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
               cutoff,
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
   
+  
   # order by bdiv
 
   ordi <- ordinate(psIN , method = "PCoA", distance = "bray")
@@ -60,8 +59,8 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
   for(i in 1:length(taxanames)){
 
     # try table type
-    otu.filt <- as.data.frame(t(otu_table(psIN)))
-    tt <- try(otu.filt[,rank]  <- getTaxonomy(otus=rownames(otu.filt), taxRanks = colnames(tax_table(psIN)), tax_tab=tax_table(psIN), level=rank),T)
+    otu.filt <- as.data.frame(otu_table(psIN)) 
+    tt <- try(otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i]),T)
     
     if(class(tt) == "try-error"){
       print("DADA2 table")
@@ -87,18 +86,34 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
      
     }
     
-    genera <- agg[,taxanames[i]]
-    agg <- agg[,-1]
-    agg <- normalizeByCols(agg)
-    inds_to_grey <- which(rowMeans(agg) < cutoff)
-    genera[inds_to_grey] <- "[1_#Other]"
-    agg[,taxanames[i]] <- genera
-    #saving table
-    agg_other_out <- subset(agg, agg[,taxanames[i]] != "[1_#Other]")
-    write.csv(agg_other_out, quote = FALSE, col.names = NA, file=sprintf("%s/%s.taxa_abundance.(%s).%s.%s.csv", out_taxa,
-                                                                         project,cutoff,taxanames[i],format(Sys.Date(),"%y%m%d"))) #,sep="/"
     
-    df <- melt(agg, variable="SampleID")
+    if (relative == TRUE){
+      genera <- agg[,taxanames[i]]
+      agg <- agg[,-1]
+      agg <- normalizeByCols(agg)
+      inds_to_grey <- which(rowMeans(agg) < cutoff)
+      genera[inds_to_grey] <- "[1_#Other]"
+      agg[,taxanames[i]] <- genera
+      #saving table
+      agg_other_out <- subset(agg, agg[,taxanames[i]] != "[1_#Other]")
+      write.csv(agg_other_out, quote = FALSE, col.names = NA, file=sprintf("%s/%s.taxa_relative_abundance.(%s).%s.%s.csv", out_taxa,
+                                                                           project,cutoff,taxanames[i],format(Sys.Date(),"%y%m%d"))) #,sep="/"
+      df <- melt(agg, variable="SampleID")
+    }else if(relative == FALSE){
+      genera <- agg[,taxanames[i]]
+      agg <- agg[,-1]
+      agg.rel <- normalizeByCols(agg)
+      inds_to_grey <- which(rowMeans(agg.rel) < cutoff)
+      genera[inds_to_grey] <- "[1_#Other]"
+      agg[,taxanames[i]] <- genera
+      #saving table
+      agg_other_out <- subset(agg, agg[,taxanames[i]] != "[1_#Other]")
+      write.csv(agg_other_out, quote = FALSE, col.names = NA, file=sprintf("%s/%s.taxa_absolute_abundance.(%s).%s.%s.csv", out_taxa,
+                                                                           project,cutoff,taxanames[i],format(Sys.Date(),"%y%m%d"))) #,sep="/"
+      df <- melt(agg, variable="SampleID")
+    }
+    
+
 
 
     # add StduyID
@@ -128,6 +143,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
     # adding facet to groups
     if (!is.null(facet)) {
       for (fa in facet){
+        rownames(mapping.sel) <- as.character(rownames(mapping.sel))
         df.SampleIDstr$Group <- as.character(mapping.sel[df.SampleIDstr$SampleID, fa])
         df2[,fa] <- mapping.sel[df2$SampleID, fa]
         df2[,fa] <- factor(df2[,fa], levels = orders)
@@ -147,8 +163,18 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
     print(1)
     # color
     colourCount = length(unique(df2[,taxanames[i]]));colourCount
-    getPalette = colorRampPalette(brewer.pal(9, colorset))
-
+    
+    if(!is.null(mycols)){
+      getPalette = colorRampPalette(mycols)
+    }else{
+      p=p
+    }
+    
+    
+    
+    
+    
+    
     # pdf size height = 5, width=9
    
     if (legend == "bottom"){
@@ -176,10 +202,26 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
       theme(legend.position=legend, # legend.text=element_text(size=8), 
             legend.text = element_text(face = c(rep("italic", 5), rep("plain", 5))),
             axis.title.x = element_blank(), axis.text.x = element_text(angle=90, vjust=0.5, hjust=1, size=8)) + 
-      guides(fill=guide_legend(ncol= coln))  + #guides(col = guide_legend(ncol = coln)) + 
-      ylim(c(-.1, 1.01)) + scale_fill_manual(values = getPalette(colourCount)) + labs(y = "Relative abundance")
+      guides(fill=guide_legend(ncol= coln))   #guides(col = guide_legend(ncol = coln)) + 
+      
+    
+    
+    if (relative == TRUE){
+      p <- p + labs(y = "Relative abundance") + ylim(c(-.1, 1.01))
+    }else if(relative == FALSE){
+      p <- p + labs(y = "Absolute abundance")
+    }
+    
     
 
+    if(!is.null(mycols)){
+      p=p + scale_fill_manual(values = getPalette(colourCount)) 
+    }else{
+      p=p
+    }
+    
+    
+    
     if (!is.null(facet)) {
       for (mvar in rownames(subset(metadata, Go_barchart =="yes"))) {
         if (class(ncol) == "numeric") {
@@ -252,3 +294,4 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
   }
   dev.off()
 }
+

@@ -3,7 +3,9 @@
 
 
 
-Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_type, adjust, des, name, alpha=0.05){
+Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type = "other", 
+                  variables,  model=NULL, 
+                  des=NULL, name=NULL, alpha=0.05){
 
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
@@ -20,57 +22,18 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
   if(!file_test("-d", out_DA.ps)) dir.create(out_DA.ps)
   
   
-  
-  #meta data
-  metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
-  metadata <- as.data.frame(t(metadataInput))
-  
-
-  
-  # map 정리
-  mapping <- data.frame(sample_data(psIN))
-  sel <- intersect(rownames(metadata), colnames(mapping)); head(sel, "3")
-  metadata.sel <- metadata[sel,, drop=F];head(metadata.sel)
-  mapping.sel <- mapping[rownames(mapping), sel, drop=F];head(mapping.sel)
-
-  dim(mapping.sel)
-  
-  
+  # taxa aggregate
   if(!is.null(taxanames)){
     psIN <- aggregate_taxa(psIN, taxanames)
   }else{
     psIN <- psIN
   }
-
-  
-  
-  # 최근 버전 for unstrafied (20210112 확인)
-   if(type == "function"){
-    # remove colume sum 0 and psIN 재구성(20201027)
-    a <- data.frame(otu_table(psIN))*10000
-    a.ceiling <- ceiling(a[-c(99),])
-    b <- a.ceiling[, -which(numcolwise(sum)(a.ceiling) < 1)]
-    if (length(b) == 0){
-      OTU.sta <- otu_table(a, taxa_are_rows = TRUE);head(OTU.sta)
-      colnames(OTU.sta) <- gsub("X", "", colnames(OTU.sta))
-      otu_table(psIN) <-  OTU.sta
-    }else if(length(b) > 1){
-      OTU.sta <- otu_table(b, taxa_are_rows = TRUE);head(OTU.sta)
-      colnames(OTU.sta) <- gsub("X", "", colnames(OTU.sta))
-      otu_table(psIN) <-  OTU.sta
-    }
-  }else if(type == "taxanomy"){
-    psIN <- psIN
-  }else if(type == "bacmet"){
-    psIN <- psIN
-  }
-
-  
+  mapping <- data.frame(sample_data(psIN))
   
   # start
   res <- {}
-  for (mvar in rownames(subset(metadata.sel, Go_deseq2 =="yes"))) {
-    if (length(unique(mapping.sel[, mvar])) == 1) {
+  for (mvar in variables) {
+    if (length(unique(mapping[, mvar])) == 1) {
       next
     }
 
@@ -141,8 +104,8 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
       exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
     }
 
-    if (length(adjust) >= 1) {
-      form <-as.formula(sprintf("~ %s + %s", mvar, paste(setdiff(adjust, "SampleType"), collapse="+")))
+    if (length(model) >= 1) {
+      form <-as.formula(sprintf("~ %s + %s", mvar, paste(setdiff(model, "SampleType"), collapse="+")))
       print(form)
       dds = phyloseq_to_deseq2(psIN.cb, form)
     }    else {
@@ -161,9 +124,9 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
    
     
     #-- ANCOM-bc for phyloseq --#
-    if(!is.null(adjust)){
+    if(!is.null(model)){
       out <- ancombc(phyloseq = psIN.cb, p_adj_method = "holm", zero_cut = 0.90, lib_cut = 1000, 
-                     formula = sprintf("%s + %s", mvar, paste(setdiff(adjust, "SampleType"), collapse="+")), 
+                     formula = sprintf("%s + %s", mvar, paste(setdiff(model, "SampleType"), collapse="+")), 
                      group = mvar, struc_zero = TRUE, neg_lb = TRUE, tol = 1e-5, 
                      max_iter = 100, conserve = TRUE, alpha = 0.05, global = TRUE)
     }else{
@@ -185,7 +148,7 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
     colnames(res.ancom.df) <- gsub(mvar,"", colnames(res.ancom.df))
 
     
-    if(!is.null(adjust)){
+    if(!is.null(model)){
       names(res.ancom.df)[length(names(res.ancom.df))]<-"diff_abn" 
     }else{
       colnames(res.ancom.df)<-c("best","se","W","pval","qval","diff_abn")
@@ -291,35 +254,7 @@ Go_DA <- function(psIN, metaData, project, order,type, filter, taxanames, data_t
             }
           }
         }
-      } else if(type == "function"){
-        for(taxa in c("KO", "KO.des","Path","Path.des")){
-          res[,taxa] == "NA"
-          res[,taxa]<- as.character(res[,taxa])
-          res[,taxa][is.na(res[,taxa])] <- "__"
-          for(i in 1:length(res[,taxa])){
-            if (res[,taxa][i] == "s__" || res[,taxa][i] == "g__" || res[,taxa][i] == "f__" || res[,taxa][i] == "o__" || res[,taxa][i] == "c__"|| res[,taxa][i] == "p__"|| res[,taxa][i] == "__"){
-              res[,taxa][i] <- ""
-            }
-          }
-        }
-        print("pass4")
-        res$KOName <- paste(res$Path,"",res$KO)
-        res$ShortName <- paste(res$Path.des,"",res$KO.des)
-        
-        
-        unique(res$ShortName)
-        
-        # use last taxa name
-        for(taxa in c("KO", "KO.des","Path","Path.des")){
-          for(i in 1:length(res[,taxa])){
-            if (res$ShortName[i] != "  "){
-              next
-            }      else if (res$ShortName[i] == "  " & res[,taxa][i] != ""){
-              res$ShortName[i] <- paste(res[,taxa][i])
-            }
-          }
-        }
-      }else if(type == "bacmet"){
+      } else if(type == "bacmet"){
         for(taxa in c("Gene",	"Organism",	"Compound",	"NCBI_annotation")){
           res[,taxa] == "NA"
           res[,taxa]<- as.character(res[,taxa])

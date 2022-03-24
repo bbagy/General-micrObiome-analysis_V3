@@ -6,7 +6,7 @@
 #' @export
 #' @examples
 
-Go_linear <- function(df, metaData, project, outcomes, maingroup, orders, name=NULL, height, width, plotCols, plotRows){
+Go_linear <- function(df, metaData, project, outcomes, mycols, maingroup, orders, name=NULL, height, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
@@ -91,7 +91,6 @@ Go_linear <- function(df, metaData, project, outcomes, maingroup, orders, name=N
       
      p <- p + theme_classic() + geom_point(size = 0.5) + 
        # scale_colour_brewer(palette = colorset) + 
-       scale_color_manual(values = mycols) +
         geom_smooth(method = my.method, formula = my.formula, linetype="solid", fill="lightgrey", se=T, size=0.5 ) + 
         ggtitle(sprintf("%s with %s", mvar, outcomes[i])) + theme(title=element_text(size=10)) + labs(x = NULL)+
         theme(title=element_text(size=10),
@@ -104,6 +103,12 @@ Go_linear <- function(df, metaData, project, outcomes, maingroup, orders, name=N
                                             stat(r.squared), stat(p.value))),
                         parse = TRUE, size = 3)
       
+      if(!is.null(mycol)){
+        p <- p + scale_color_manual(values = mycols)
+      }else{
+        p <- p
+      }
+
 
 
       plotlist[[length(plotlist)+1]] <- p

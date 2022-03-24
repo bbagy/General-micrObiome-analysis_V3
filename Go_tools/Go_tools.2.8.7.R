@@ -162,7 +162,8 @@ Go_emptyMap <- function(psIN, project){
   column.names <- c("StudyID", "Variation1", "Variation2","etc")
   col.count <- length(column.names)
   
-  analysis <- c("type",	"baseline",	"Go_barchart", 	"Go_overview",	"Go_box",	"Go_linear","Go_clme", "Go_reg",	 "Go_bdiv",	"Go_perm","Go_mirkat",	"Go_deseq2","Go_ancombc", "Go_lmem","Confounder")
+  # 	"Go_overview","Go_ancombc",
+  analysis <- c("type",	"baseline",	"Go_barchart", 	"Go_box",	"Go_linear","Go_clme", "Go_reg", "Go_bdiv",	"Go_perm","Go_mirkat",	"Go_deseq2", "Go_lmem","Confounder")
   row.count <- length(analysis)
   
   emptyMetadata <- data.frame(matrix(ncol = col.count, nrow = row.count))
@@ -493,14 +494,12 @@ Go_qq <- function(psIN, project, alpha_metrics, name, height, width){
 #' Go_barchart()
 
 
-Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  
+Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  mycols,
                         x_label="SampleIDfactor", facet=NULL, legend="bottom", orders,
                         cutoff=0.005, name=NULL, ncol=11, height, width,plotCols,  plotRows){
     
   if(!is.null(dev.list())) dev.off()
   
-  colorset = "Set1" # Dark1 Set1 Paired
-  #taxRanks <- c("Phylum","Class","Order","Family", "Genus","Species")
   
   taxRanks <- taxanames
   
@@ -534,6 +533,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
               cutoff,
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
   
+  
   # order by bdiv
 
   ordi <- ordinate(psIN , method = "PCoA", distance = "bray")
@@ -549,24 +549,17 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
     tt <- try(otu.filt[,rank]  <- getTaxonomy(otus=rownames(otu.filt), taxRanks = colnames(tax_table(psIN)), tax_tab=tax_table(psIN), level=rank),T)
     
     if(class(tt) == "try-error"){
-      print("other table")
-      otu.filt <- as.data.frame(otu_table(psIN)) 
+      print("DADA2 table")
+      otu.filt <- as.data.frame(t(otu_table(psIN))) 
       otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i])
     }else{
-      otu.filt <- as.data.frame(t(otu_table(psIN)))
-      print("DADA2 table")
+      otu.filt <- as.data.frame(otu_table(psIN)) 
+      print("other table")
       otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i])
     }
     
     
-    
-    
-    
-    
-    
-    
-    
-    
+
     
     if (dim(otu.filt)[2] == 2){
       next
@@ -639,8 +632,18 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
     print(1)
     # color
     colourCount = length(unique(df2[,taxanames[i]]));colourCount
-    getPalette = colorRampPalette(brewer.pal(9, colorset))
-
+    
+    if(!is.null(mycol)){
+      getPalette = colorRampPalette(mycols)
+    }else{
+      p=p
+    }
+    
+    
+    
+    
+    
+    
     # pdf size height = 5, width=9
    
     if (legend == "bottom"){
@@ -669,9 +672,19 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
             legend.text = element_text(face = c(rep("italic", 5), rep("plain", 5))),
             axis.title.x = element_blank(), axis.text.x = element_text(angle=90, vjust=0.5, hjust=1, size=8)) + 
       guides(fill=guide_legend(ncol= coln))  + #guides(col = guide_legend(ncol = coln)) + 
-      ylim(c(-.1, 1.01)) + scale_fill_manual(values = getPalette(colourCount)) + labs(y = "Relative abundance")
+      ylim(c(-.1, 1.01))+ labs(y = "Relative abundance")
+    
+    
     
 
+    if(!is.null(mycol)){
+      p=p + scale_fill_manual(values = getPalette(colourCount)) 
+    }else{
+      p=p
+    }
+    
+    
+    
     if (!is.null(facet)) {
       for (mvar in rownames(subset(metadata, Go_barchart =="yes"))) {
         if (class(ncol) == "numeric") {
@@ -744,6 +757,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",
   }
   dev.off()
 }
+
 #' A Go_overview
 #'
 #' This function allows you to express your love of cats.
@@ -1228,7 +1242,7 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol,
 
       
       if(!is.null(mycol)){
-        p1 <- p1 + scale_color_manual(values = mycol)
+        p1 <- p1 + scale_color_manual(values = mycols)
       }else{
         p1 <- p1
       }
@@ -1319,7 +1333,7 @@ Go_boxplot <- function(df, metaData, project, orders=NULL, outcomes,mycol,
 #' Go_clme()
 
 
-Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
+Go_clme <- function(psIN, metaData, project, paired, mycols, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
@@ -1462,8 +1476,16 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
             geom_line(color="grey",size=line.tickness) + geom_point(alpha = 0.8, size = dot.size) + 
             xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + 
             ggtitle(sprintf("%s-%s \n (%s) ", mvar, des, clme.globalp))   + theme_bw() +
-            theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" ) +
-            scale_color_manual(values = mycols)
+            theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" ) 
+
+
+           if(!is.null(mycol)){
+           p <- p + scale_color_manual(values = mycols)
+           }else{
+           p <- p
+           }
+
+
           
           if (length(ID) == 1) {
             p= p + geom_text_repel(aes_string(label = ID), size = 2)
@@ -1488,7 +1510,7 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
 #' @export
 #' @examples
 
-Go_linear <- function(df, metaData, project, outcomes, maingroup, orders, name=NULL, height, width, plotCols, plotRows){
+Go_linear <- function(df, metaData, project, outcomes, mycols, maingroup, orders, name=NULL, height, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
@@ -1573,7 +1595,6 @@ Go_linear <- function(df, metaData, project, outcomes, maingroup, orders, name=N
       
      p <- p + theme_classic() + geom_point(size = 0.5) + 
        # scale_colour_brewer(palette = colorset) + 
-       scale_color_manual(values = mycols) +
         geom_smooth(method = my.method, formula = my.formula, linetype="solid", fill="lightgrey", se=T, size=0.5 ) + 
         ggtitle(sprintf("%s with %s", mvar, outcomes[i])) + theme(title=element_text(size=10)) + labs(x = NULL)+
         theme(title=element_text(size=10),
@@ -1586,6 +1607,12 @@ Go_linear <- function(df, metaData, project, outcomes, maingroup, orders, name=N
                                             stat(r.squared), stat(p.value))),
                         parse = TRUE, size = 3)
       
+      if(!is.null(mycol)){
+        p <- p + scale_color_manual(values = mycols)
+      }else{
+        p <- p
+      }
+
 
 
       plotlist[[length(plotlist)+1]] <- p
@@ -1951,7 +1978,7 @@ Go_dualYplot <- function(df, TaxTab, metaData, project, orders=NULL, Box, Line1,
 #' A Go_box_plot
 #'
 
-Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes, mycols=NULL,
+Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes, mycols,
                         statistics = "yes", parametric= "no", star="no",ylim =NULL,
                         title= NULL, facet= NULL, paired=NULL, name= NULL, 
                         xanlgle=90, combination, height, width, plotCols, plotRows){
@@ -2121,15 +2148,15 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes, mycols=NULL,
         p1 <- ggplot(adiv.cbn, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
           theme_bw() + theme(strip.background = element_blank()) +
           theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5),
-          plot.title=element_text(size=9,face="bold")) 
+          plot.title=element_text(size=9,face="bold"))
           # scale_color_brewer(palette=colorset)
-
         
-        if(!is.null(mycols)){
-          p1 <- p1 + scale_color_manual(values = mycols)
-        }else{
-          p1 <- p1
-        }
+
+      if(!is.null(mycol)){
+        p1 <- p1 + scale_color_manual(values = mycols)
+      }else{
+        p1 <- p1
+      }
         
         
         # Close an image
@@ -2227,7 +2254,8 @@ Go_boxcbn <- function(df, metaData, project, orders=NULL, outcomes, mycols=NULL,
 #'
 
 
-Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NULL, name=NULL, height, width){
+Go_bdiv <- function(psIN, metaData, project, orders, mycol,
+distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NULL, name=NULL, height, width){
     
   if(!is.null(dev.list())) dev.off()
    
@@ -2347,7 +2375,6 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
       
       p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
       p = p + facet_wrap(~ method, scales="free") + theme_bw() + theme(strip.background = element_blank())# open(1), cross(10), closed(2)
-      p = p + scale_color_manual(values = mycols)
       p = p + theme(legend.position = "bottom", 
                     legend.title = element_blank(),
                     legend.justification="left", 
@@ -2355,7 +2382,12 @@ Go_bdiv <- function(psIN, metaData, project, orders, distance_metrics, plot="PCo
                     legend.box.margin = ggplot2::margin(0,0,0,-1,"cm"),
                     plot.title=element_text(size=9,face="bold"))
       
-      
+      if(!is.null(mycol)){
+        p1 <- p1 + scale_color_manual(values = mycols)
+      }else{
+        p1 <- p1
+      }
+
       # ID variation
       if (!is.null(ID)) {
         p = p + geom_text_repel(aes_string(label = ID), size = 2)
@@ -2874,7 +2906,7 @@ Go_dist_plot <- function(psIN, project, distance_metrics, distance, group,orders
 #'
 
 
-Go_bdivcbn <- function(psIN, metaData, project, orders, distance_metrics,
+Go_bdivcbn <- function(psIN, metaData, project, orders, distance_metrics, mycols, 
                        plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NULL, name=NULL,
                        combination, height, width){
     
@@ -3047,12 +3079,19 @@ Go_bdivcbn <- function(psIN, metaData, project, orders, distance_metrics,
         
         p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
         p = p + facet_wrap(~ method, scales="free") + theme_bw() + theme(strip.background = element_blank())# open(1), cross(10), closed(2)
-        p = p + scale_color_manual(values = mycols)
         p = p + theme(legend.position = "bottom", 
                       legend.title = element_blank(),
                       legend.justification="left", 
                       legend.box = "vertical",
                       legend.box.margin = ggplot2::margin(0,0,0,-1,"cm"))
+
+
+      if(!is.null(mycol)){
+        p1 <- p1 + scale_color_manual(values = mycols)
+      }else{
+        p1 <- p1
+      }
+    
         
         
         # ID variation
@@ -8898,7 +8937,7 @@ Go_myCols <- function(custumCols, presetCols) {
     
     cat("#=== Please select your colors. If not, basic color would be used. ===#","\n","\n", sep=" ")
     
-    cols1 <- c("#1170aa", "#fc7d0b",  "#76B7B2", "#B07AA1", "#E15759","#59A14F","#EDC948", "#FF9DA7", "#9C755F", "#BABOAC") # Tableau10
+    cols1 <- c("#1170aa", "#fc7d0b",  "#76B7B2", "#B07AA1", "#E15759","#59A14F","#EDC948", "#FF9DA7", "#9C755F", "#BAB0AC") # Tableau10
     cat("Custum Colors1: cols1","\n", cols1, "\n","\n", sep=" ")
     cat("Preset Colors:","\n", "Set3     Set2    Set1   Pastel2", "\n", "Pastel1  Paired  Dark2  Accent", "\n", sep=" ")
     
@@ -8908,7 +8947,7 @@ Go_myCols <- function(custumCols, presetCols) {
   
   if(!is.null(custumCols)){
     if(custumCols == "cols1"){
-      cols1 <- c("#1170aa", "#fc7d0b",  "#76B7B2", "#B07AA1", "#E15759","#59A14F","#EDC948", "#FF9DA7", "#9C755F", "#BABOAC") # Tableau10
+      cols1 <- c("#1170aa", "#fc7d0b",  "#76B7B2", "#B07AA1", "#E15759","#59A14F","#EDC948", "#FF9DA7", "#9C755F", "#BAB0AC") # Tableau10
       mycols <- cols1
       return(mycols)
     }

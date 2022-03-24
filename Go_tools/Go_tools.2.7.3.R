@@ -7733,6 +7733,9 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,Ntax=NULL,
   # phylum_col = RColorBrewer::brewer.pal(length(levels(annotation_row$Phylum)), "Dark2")
   
   phylum_col <- head(brewer.pal(8, "Dark2"),length(unique(annotation_row$Phylum)))
+  
+  getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
+  phylum_col <- getPalette(length(unique(annotation_row$Phylum)))
   names(phylum_col) = levels(annotation_row$Phylum)
   
   # add group(s) and color list

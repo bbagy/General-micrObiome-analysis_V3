@@ -8,7 +8,7 @@
 #' Go_clme()
 
 
-Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
+Go_clme <- function(psIN, metaData, project, paired, mycols=NULL, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
@@ -151,8 +151,16 @@ Go_clme <- function(psIN, metaData, project, paired, node, decreasing, height,ti
             geom_line(color="grey",size=line.tickness) + geom_point(alpha = 0.8, size = dot.size) + 
             xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + 
             ggtitle(sprintf("%s-%s \n (%s) ", mvar, des, clme.globalp))   + theme_bw() +
-            theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" ) +
-            scale_color_manual(values = mycols)
+            theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" ) 
+
+
+           if(!is.null(mycol)){
+           p <- p + scale_color_manual(values = mycols)
+           }else{
+           p <- p
+           }
+
+
           
           if (length(ID) == 1) {
             p= p + geom_text_repel(aes_string(label = ID), size = 2)
