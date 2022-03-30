@@ -8,9 +8,17 @@
 #' Go_barchart()
 
 
-Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  mycols=NULL, relative = T,
-                        x_label="SampleIDfactor", facet=NULL, legend="bottom", orders,
-                        cutoff=0.005, name=NULL, ncol=11, height, width,plotCols,  plotRows){
+Go_barchart <- function(psIN, category.vars, project, taxanames, orders,
+                        simple = FALSE,  
+                        mycols=NULL, 
+                        relative = T,
+                        x_label=NULL, 
+                        facet=NULL, 
+                        legend="bottom", 
+                        cutoff=0.005, 
+                        name=NULL, 
+                        ncol=NULL, 
+                        height, width){
     
   if(!is.null(dev.list())) dev.off()
   
@@ -27,25 +35,39 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  myco
   out_taxa <- file.path(sprintf("%s_%s/table/taxa",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_taxa)) dir.create(out_taxa)
 
-  
-  #meta data
-  metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
-  metadata <- as.data.frame(t(metadataInput))
+if(!is.null(x_label)){
+  x_label = x_label
+}else{
+  x_label="SampleIDfactor"
+}
 
-  
-  
-  
+
+
   # logic for out file
     # "name" definition
   if (class(name) == "function"){
     name <- NULL
   }
-  pdf(sprintf("%s/barchart.%s.%s%s(%s).%s.pdf", out_path, 
+
+if(relative == T){
+  pdf(sprintf("%s/barchart.relative.%s.%s%s(%s).%s.pdf", out_path, 
               project, 
               ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 
               cutoff,
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
+}else{
+  pdf(sprintf("%s/barchart.absolute.%s.%s%s(%s).%s.pdf", out_path, 
+              project, 
+              ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              cutoff,
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
+}
+
+
+
+
   
   
   # order by bdiv
@@ -127,7 +149,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  myco
     #mapping.sel[df2$SampleID, "StudyID"]
    
     # add groups
-    for (mvar in rownames(subset(metadata, Go_barchart =="yes"))) {
+    for (mvar in category.vars) {
       df.SampleIDstr$Group <- as.character(mapping.sel[df.SampleIDstr$SampleID, mvar])
       df2[,mvar] <- mapping.sel[df2$SampleID, mvar]
 
@@ -223,13 +245,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  myco
     
     
     if (!is.null(facet)) {
-      for (mvar in rownames(subset(metadata, Go_barchart =="yes"))) {
-        if (class(ncol) == "numeric") {
-          ncol <- ncol
-        }else if(length(unique(df2[,mvar])) >= 1){
-          ncol <- length(unique(df2[,mvar]))*length(unique(df2[,facet]))
-        }
-        
+      for (mvar in category.vars) {        
         if (facet == mvar) {
           next
         }
@@ -237,7 +253,16 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  myco
         df2[,facet] <- factor(df2[,facet], levels = orders)
         
         print(sprintf("Facet by %s-%s",mvar, facet))
-        p <- p+ facet_wrap(as.formula(sprintf("~ %s + %s", paste(setdiff(facet, "SampleType"), collapse="+"), mvar)), scales = "free_x", ncol = ncol) 
+
+         if (!is.null(ncol)) {
+         p <- p+ facet_wrap(as.formula(sprintf("~ %s + %s", paste(setdiff(facet, "SampleType"), collapse="+"), mvar)), scales = "free_x", ncol = ncol) 
+         }else{
+         p <- p+ facet_grid(as.formula(sprintf("~ %s + %s", paste(setdiff(facet, "SampleType"), collapse="+"), mvar)), scales = "free_x", space = "free") 
+         }
+
+
+
+
 
         if (!is.null(name)) {
           p = p+ ggtitle(sprintf("Taxa barplots overall of %s-%s (cut off < %s)",mvar,name, cutoff))
@@ -249,16 +274,17 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  myco
         print(p)
       }
 
-    }     else if (is.null(facet) & simple == "no") {
-      for (mvar in rownames(subset(metadata, Go_barchart =="yes"))) {
-        if (class(ncol) == "numeric") {
-          ncol <- ncol
-        }else if(length(unique(df2[,mvar])) >= 1){
-          ncol <- length(unique(df2[,mvar]))
-        }
+    }     else if (is.null(facet) & simple == FALSE) {
+      for (mvar in category.vars) {
         print("B")
         print(sprintf("Facet by %s",mvar))
-        p <- p+  facet_wrap(as.formula(sprintf("~ %s"  ,mvar)), scales = "free_x", ncol = ncol)  
+
+         if (!is.null(ncol)) {
+         p <- p + facet_wrap(as.formula(sprintf("~ %s"  ,mvar)), scales = "free_x", ncol = ncol)  
+         }else{
+         p <- p + facet_grid(as.formula(sprintf("~ %s"  ,mvar)), scales = "free_x", space = "free") 
+         }
+
         
         if (length(name) == 1) {
           p= p+ ggtitle(sprintf("%s barplots overall of %s-%s (cut off < %s)",taxanames[i],mvar,name, cutoff))
@@ -269,13 +295,9 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  myco
         #plotlist[[length(plotlist)+1]] <- p
         print(p)
       }
-    } else if (is.null(facet) & simple == "yes") {
-      for (mvar in rownames(subset(metadata, Go_barchart =="yes"))) {
-        if (class(ncol) == "numeric") {
-          ncol <- ncol
-        }else if(length(unique(df2[,mvar])) >= 1){
-          ncol <- length(unique(df2[,mvar]))
-        }
+    } else if (is.null(facet) & simple == TRUE) {
+      for (mvar in category.vars) {
+
         print("C")
         print("Simpe plot")
         

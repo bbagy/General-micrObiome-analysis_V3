@@ -2,7 +2,7 @@
 #'
 
 
-Go_bdiv <- function(psIN, variables, project, orders, mycols=NULL,combination=NULL,
+Go_bdiv <- function(psIN, category.vars, project, orders, mycols=NULL,combination=NULL,
 distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NULL, name=NULL, height, width){
     
   if(!is.null(dev.list())) dev.off()
@@ -30,7 +30,7 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
 
   
   plotlist <- list()
-  for (mvar in variables) {
+  for (mvar in category.vars) {
     mapping <- data.frame(sample_data(psIN))
 
     mapping[,mvar] <- factor(mapping[,mvar])

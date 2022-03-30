@@ -59,7 +59,7 @@ cat(blue("#--------------------------------------------------------------# \n"))
 cat(blue("#------       General analysis Of microbiome (Go)        ------# \n"))
 cat(blue("#------    Quick statistics and visualization tools      ------# \n"))
 cat(blue("#--------------------------------------------------------------# \n"))
-cat(red("                                      Version: Go_tools.2.9.3 \n"))
+cat(red("                                      Version: Go_tools.2.9.4 \n"))
 cat("                                              Write by Heekuk \n")
 cat(yellow("All the required packages were installed.\n"))
 cat(yellow("All the required packages were loaded.\n"))
@@ -162,10 +162,8 @@ Go_emptyMap <- function(psIN, project){
   column.names <- c("StudyID", "Variation1", "Variation2","etc")
   col.count <- length(column.names)
   
-  # 	"Go_overview","Go_ancombc","Go_deseq2",
-  analysis <- c("type",	"baseline",	"Go_barchart", 	"Go_box",	"Go_linear","Go_clme", "Go_reg", "Go_bdiv",	"Go_perm","Go_mirkat",	 "Go_lmem","Confounder")
-
-
+  # 	"Go_overview","Go_ancombc","Go_deseq2","Go_box","Go_bdiv",	"Go_barchart","Go_linear","Go_clme","Go_perm",
+  analysis <- c("type",	"baseline",	"Go_reg", "Go_mirkat", "Go_lmem","Confounder")
 
   row.count <- length(analysis)
   
@@ -497,7 +495,7 @@ Go_qq <- function(psIN, project, alpha_metrics, name, height, width){
 #' Go_barchart()
 
 
-Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  mycols=NULL, relative = T,
+Go_barchart <- function(psIN, variables, project, taxanames, simple = "no",  mycols=NULL, relative = T,
                         x_label="SampleIDfactor", facet=NULL, legend="bottom", orders,
                         cutoff=0.005, name=NULL, ncol=11, height, width,plotCols,  plotRows){
     
@@ -516,14 +514,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  myco
   out_taxa <- file.path(sprintf("%s_%s/table/taxa",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_taxa)) dir.create(out_taxa)
 
-  
-  #meta data
-  metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
-  metadata <- as.data.frame(t(metadataInput))
 
-  
-  
-  
   # logic for out file
     # "name" definition
   if (class(name) == "function"){
@@ -616,7 +607,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  myco
     #mapping.sel[df2$SampleID, "StudyID"]
    
     # add groups
-    for (mvar in rownames(subset(metadata, Go_barchart =="yes"))) {
+    for (mvar in variables) {
       df.SampleIDstr$Group <- as.character(mapping.sel[df.SampleIDstr$SampleID, mvar])
       df2[,mvar] <- mapping.sel[df2$SampleID, mvar]
 
@@ -712,7 +703,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  myco
     
     
     if (!is.null(facet)) {
-      for (mvar in rownames(subset(metadata, Go_barchart =="yes"))) {
+      for (mvar in variables) {
         if (class(ncol) == "numeric") {
           ncol <- ncol
         }else if(length(unique(df2[,mvar])) >= 1){
@@ -739,7 +730,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  myco
       }
 
     }     else if (is.null(facet) & simple == "no") {
-      for (mvar in rownames(subset(metadata, Go_barchart =="yes"))) {
+      for (mvar in variables) {
         if (class(ncol) == "numeric") {
           ncol <- ncol
         }else if(length(unique(df2[,mvar])) >= 1){
@@ -759,7 +750,7 @@ Go_barchart <- function(psIN, metaData, project, taxanames, simple = "no",  myco
         print(p)
       }
     } else if (is.null(facet) & simple == "yes") {
-      for (mvar in rownames(subset(metadata, Go_barchart =="yes"))) {
+      for (mvar in variables) {
         if (class(ncol) == "numeric") {
           ncol <- ncol
         }else if(length(unique(df2[,mvar])) >= 1){
@@ -1368,14 +1359,14 @@ Go_boxplot <- function(df, variables, project, orders=NULL, outcomes, mycols=NUL
             
             
             # count or table for number of variable
-            
             if (max(table(adiv.cbn[,mvar])) > 250 & max(table(adiv.cbn[,mvar])) < 500){
               dot.size <- dot.size/2
               p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
             } else  if (max(table(adiv.cbn[,mvar])) < 250 ){
               p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
             }else if(max(table(adiv.cbn[,mvar])) > 500) {
-              p1 = p1
+              dot.size <- dot.size/3
+              p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2))
             }
             
             
@@ -1494,11 +1485,16 @@ Go_boxplot <- function(df, variables, project, orders=NULL, outcomes, mycols=NUL
         } else{
           p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
           
-          if (dim(adiv.na)[1] < 500){
-            p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
-          } else{
-            p1 = p1
-          }
+            # count or table for number of variable
+            if (max(table(adiv[,mvar])) > 250 & max(table(adiv[,mvar])) < 500){
+              dot.size <- dot.size/2
+              p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
+            } else  if (max(table(adiv[,mvar])) < 250 ){
+              p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
+            }else if(max(table(adiv[,mvar])) > 500) {
+              dot.size <- dot.size/3
+              p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2))
+            }
         } 
         # facet
         if (length(facet) >= 1) {
@@ -1526,7 +1522,7 @@ Go_boxplot <- function(df, variables, project, orders=NULL, outcomes, mycols=NUL
 #' Go_clme()
 
 
-Go_clme <- function(psIN, metaData, project, paired, mycols=NULL, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
+Go_clme <- function(psIN, variables, project, paired, mycols=NULL, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
@@ -1543,9 +1539,6 @@ Go_clme <- function(psIN, metaData, project, paired, mycols=NULL, node, decreasi
   out_path <- file.path(sprintf("%s_%s/pdf",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_path)) dir.create(out_path)
   
-  
-  metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
-  metadata <- as.data.frame(t(metadataInput))
   
     # logic for out file
     # "name" definition
@@ -1581,7 +1574,7 @@ Go_clme <- function(psIN, metaData, project, paired, mycols=NULL, node, decreasi
   print(cons)
   
   plotlist <- list()
-  for (mvar in rownames(subset(metadata, Go_clme == "yes"))) {
+  for (mvar in variables) {
     print(mvar)
     
     if (length(unique(adiv[,mvar])) < 2){
@@ -6570,8 +6563,8 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NUL
 
 
 Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type = "other", 
-                  variables,  model=NULL, 
-                  des=NULL, name=NULL, alpha=0.05){
+                  variables,  confounder=NULL, 
+                  des=NULL, name=NULL, fdr=0.05){
 
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
@@ -6670,8 +6663,8 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
       exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
     }
 
-    if (length(model) >= 1) {
-      form <-as.formula(sprintf("~ %s + %s", mvar, paste(setdiff(model, "SampleType"), collapse="+")))
+    if (length(confounder) >= 1) {
+      form <-as.formula(sprintf("~ %s + %s", mvar, paste(setdiff(confounder, "SampleType"), collapse="+")))
       print(form)
       dds = phyloseq_to_deseq2(psIN.cb, form)
     }    else {
@@ -6690,9 +6683,9 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
    
     
     #-- ANCOM-bc for phyloseq --#
-    if(!is.null(model)){
+    if(!is.null(confounder)){
       out <- ancombc(phyloseq = psIN.cb, p_adj_method = "holm", zero_cut = 0.90, lib_cut = 1000, 
-                     formula = sprintf("%s + %s", mvar, paste(setdiff(model, "SampleType"), collapse="+")), 
+                     formula = sprintf("%s + %s", mvar, paste(setdiff(confounder, "SampleType"), collapse="+")), 
                      group = mvar, struc_zero = TRUE, neg_lb = TRUE, tol = 1e-5, 
                      max_iter = 100, conserve = TRUE, alpha = 0.05, global = TRUE)
     }else{
@@ -6714,7 +6707,7 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
     colnames(res.ancom.df) <- gsub(mvar,"", colnames(res.ancom.df))
 
     
-    if(!is.null(model)){
+    if(!is.null(confounder)){
       names(res.ancom.df)[length(names(res.ancom.df))]<-"diff_abn" 
     }else{
       colnames(res.ancom.df)<-c("best","se","W","pval","qval","diff_abn")
@@ -6729,7 +6722,7 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
         tmp[length(tmp)]
       }))
       
-      tmp$deseq2 <- ifelse(tmp$padj < alpha, ifelse(sign(tmp$log2FoldChange)==1, "up", "down"), "NS")
+      tmp$deseq2 <- ifelse(tmp$padj < fdr, ifelse(sign(tmp$log2FoldChange)==1, "up", "down"), "NS")
       # merge deseq2 + amcom 
       tmp$ancom <- factor(res.ancom.df$diff_abn[match(rownames(tmp), rownames(res.ancom.df))]);head(tmp$ancom)
       
@@ -6849,7 +6842,7 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
       #-- create table --#
       res <- as.data.frame(res)
       res$padj <- p.adjust(res$pvalue, method="fdr")
-      res$dir <- ifelse(res$padj < alpha, ifelse(sign(res$log2FoldChange)==1, "up", "down"), "NS")
+      res$dir <- ifelse(res$padj < fdr, ifelse(sign(res$log2FoldChange)==1, "up", "down"), "NS")
       
       
       # get ps objectonly significant taxa 
@@ -6978,8 +6971,8 @@ Go_DA_plot <- function(project, file_path,files, type, plot = "volcano", fdr, fc
       
     } else if(plot == "forest"){
       print("Generating forest plots.")
-      resSig <- as.data.frame(subset(df.sel, padj < alpha)); resSig <- resSig[order(resSig$log2FoldChange),]
-      resSig.top <- as.data.frame(subset(resSig, abs(resSig$log2FoldChange) > beta))
+      resSig <- as.data.frame(subset(df.na, padj < fdr)); resSig <- resSig[order(resSig$log2FoldChange),]
+      resSig.top <- as.data.frame(subset(resSig, abs(resSig$log2FoldChange) > fc))
       if (dim(resSig)[1] == 0 | dim(resSig.top)[1] == 0 ){
         next
       }

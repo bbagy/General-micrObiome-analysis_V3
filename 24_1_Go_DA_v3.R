@@ -4,8 +4,8 @@
 
 
 Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type = "other", 
-                  variables,  model=NULL, 
-                  des=NULL, name=NULL, alpha=0.05){
+                  category.vars,  confounder=NULL, orders=NULL,
+                  des=NULL, name=NULL, fdr=0.05){
 
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
@@ -32,7 +32,7 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
   
   # start
   res <- {}
-  for (mvar in variables) {
+  for (mvar in category.vars) {
     if (length(unique(mapping[, mvar])) == 1) {
       next
     }
@@ -44,6 +44,7 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
     na.count <- length(mapping.sel.na)
     psIN.na <- prune_samples(rownames(mapping.sel[!is.na(mapping.sel[,mvar]), ]), psIN)
     mapping.sel.na.rem <- data.frame(sample_data(psIN.na ))
+
     if (length(unique(mapping.sel.na.rem[,mvar])) == 1 )
       next
 
@@ -74,10 +75,19 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
       sample_data(psIN.na) <- mapping.sel.na.rem
     }
 
+
+
+    # for changing "-" to character 
+    mapping.sel[,mvar] <- gsub("V-","Vn",mapping.sel[,mvar])
+
     # combination
-    mapping.sel[,mvar] <- factor(mapping.sel[,mvar], levels = orders)
+    if(!is.null(orders)){
+     mapping.sel[,mvar] <- factor(mapping.sel[,mvar], levels = intersect(orders, mapping.sel[,mvar]))
+    }else{
+     mapping.sel[,mvar] <- factor(mapping.sel[,mvar])
+    }
     
-    mapping.sel[,mvar] <- factor(mapping.sel[,mvar])
+    # mapping.sel[,mvar] <- factor(mapping.sel[,mvar])
     cbn <- combn(x = levels(mapping.sel[,mvar]), m = 2)
     
     my_comparisons <- {}
@@ -90,10 +100,11 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
     for(i in 1:length(my_comparisons)){
     print(my_comparisons[i])
     combination <- unlist(my_comparisons[i]);combination
-    basline <-combination[1]
+    basline <- combination[1]
     smvar <- combination[2]
     
     mapping.sel.cb <- subset(mapping.sel, mapping.sel[[mvar]] %in% c(basline, smvar)) # phyloseq subset은 작동을 안한다.
+    
     psIN.cb <- psIN.na
     sample_data(psIN.cb) <- mapping.sel.cb
     
@@ -104,8 +115,8 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
       exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
     }
 
-    if (length(model) >= 1) {
-      form <-as.formula(sprintf("~ %s + %s", mvar, paste(setdiff(model, "SampleType"), collapse="+")))
+    if (length(confounder) >= 1) {
+      form <-as.formula(sprintf("~ %s + %s", mvar, paste(setdiff(confounder, "SampleType"), collapse="+")))
       print(form)
       dds = phyloseq_to_deseq2(psIN.cb, form)
     }    else {
@@ -124,9 +135,9 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
    
     
     #-- ANCOM-bc for phyloseq --#
-    if(!is.null(model)){
+    if(!is.null(confounder)){
       out <- ancombc(phyloseq = psIN.cb, p_adj_method = "holm", zero_cut = 0.90, lib_cut = 1000, 
-                     formula = sprintf("%s + %s", mvar, paste(setdiff(model, "SampleType"), collapse="+")), 
+                     formula = sprintf("%s + %s", mvar, paste(setdiff(confounder, "SampleType"), collapse="+")), 
                      group = mvar, struc_zero = TRUE, neg_lb = TRUE, tol = 1e-5, 
                      max_iter = 100, conserve = TRUE, alpha = 0.05, global = TRUE)
     }else{
@@ -148,7 +159,7 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
     colnames(res.ancom.df) <- gsub(mvar,"", colnames(res.ancom.df))
 
     
-    if(!is.null(model)){
+    if(!is.null(confounder)){
       names(res.ancom.df)[length(names(res.ancom.df))]<-"diff_abn" 
     }else{
       colnames(res.ancom.df)<-c("best","se","W","pval","qval","diff_abn")
@@ -163,13 +174,18 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
         tmp[length(tmp)]
       }))
       
-      tmp$deseq2 <- ifelse(tmp$padj < alpha, ifelse(sign(tmp$log2FoldChange)==1, "up", "down"), "NS")
+      tmp$deseq2 <- ifelse(tmp$padj < fdr, ifelse(sign(tmp$log2FoldChange)==1, "up", "down"), "NS")
       # merge deseq2 + amcom 
       tmp$ancom <- factor(res.ancom.df$diff_abn[match(rownames(tmp), rownames(res.ancom.df))]);head(tmp$ancom)
       
+
+
+
       tmp$mvar <- mvar
       tmp$basline<-basline
+      tmp$bas.count <-  sum(with(mapping.sel.cb, mapping.sel.cb[,mvar] == basline))
       tmp$smvar <- smvar
+      tmp$smvar.count <-  sum(with(mapping.sel.cb, mapping.sel.cb[,mvar] == smvar))
       if (length(des) == 1) {
         tmp$des <- des
       }
@@ -283,7 +299,7 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
       #-- create table --#
       res <- as.data.frame(res)
       res$padj <- p.adjust(res$pvalue, method="fdr")
-      res$dir <- ifelse(res$padj < alpha, ifelse(sign(res$log2FoldChange)==1, "up", "down"), "NS")
+      res$dir <- ifelse(res$padj < fdr, ifelse(sign(res$log2FoldChange)==1, "up", "down"), "NS")
       
       
       # get ps objectonly significant taxa 
@@ -301,7 +317,11 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
       if (class(name) == "function"){
         name <- NULL
       }
-      
+
+      # for changing "n" to "-" 
+      res$basline <- gsub("Vn","V-",res$basline)
+      res$smvar <- gsub("Vn","V-",res$smvar)
+
       write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/(%s.vs.%s).Sig%s.%s.%s%s%s%s.DA.csv",out_DA.Tab,
                                                                basline, 
                                                                smvar,

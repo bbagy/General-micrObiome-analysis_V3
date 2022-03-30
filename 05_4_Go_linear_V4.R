@@ -6,7 +6,7 @@
 #' @export
 #' @examples
 
-Go_linear <- function(df, metaData, project, outcomes, mycols, maingroup, orders, name=NULL, height, width, plotCols, plotRows){
+Go_linear <- function(df, numeric.vars, project, outcomes, mycols, maingroup, orders, name=NULL, height, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
@@ -16,10 +16,6 @@ Go_linear <- function(df, metaData, project, outcomes, mycols, maingroup, orders
   if(!file_test("-d", out)) dir.create(out)
   out_path <- file.path(sprintf("%s_%s/pdf",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_path)) dir.create(out_path)
-  
-  #meta data
-  metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
-  metadata <- as.data.frame(t(metadataInput))
 
   # out file
   # "name" definition
@@ -39,7 +35,7 @@ Go_linear <- function(df, metaData, project, outcomes, mycols, maingroup, orders
   
   # plot
   plotlist <- list()
-  for (mvar in rownames(subset(metadata, Go_linear =="yes" & type == "numeric"))) {
+  for (mvar in numeric.vars) {
     if (!is.null(maingroup)){
       if (mvar == maingroup){
         next

@@ -1,5 +1,5 @@
 
-Go_mirkat<- function(psIN, metaData, project, orders,name=NULL){
+Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,name=NULL){
   # install bioconductor
   if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
@@ -40,28 +40,19 @@ Go_mirkat<- function(psIN, metaData, project, orders,name=NULL){
   out_table <- file.path(sprintf("%s_%s/table/mirkat",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_table)) dir.create(out_table)
   
-  #meta data
-  metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
-  metadata <- as.data.frame(t(metadataInput))
+
   
-  # check by metadata
+  # check by variables
   mapping <- data.frame(sample_data(psIN))
-  for (mvar in  rownames(subset(metadata, Go_mirkat=="yes" | Confounder=="yes"))) {
-    if (metadata[mvar, "type"] == "factor") {
-      mapping[,mvar] <- factor(mapping[,mvar])
-    } else if (metadata[mvar, "type"] == "numeric") {
-      mapping[,mvar] <- as.numeric(as.character(mapping[[mvar]]))
-    } else if (metadata[mvar, "type"] == "date") {
-      mapping[,mvar] <- as.Date(sprintf("%06d", mapping[,mvar]), format="%m%d%y")
-      mapping[,mvar] <- factor(as.character(mapping[,mvar]), levels=as.character(unique(sort(mapping[,mvar]))))
-    }
+  for (mvar in  confounder) {
+   mapping[,mvar] <- factor(mapping[,mvar])
   }
   
   sample_data(psIN) <- mapping
   
   
   res <- {}
-  for (mvar in rownames(subset(metadata, Go_mirkat =="yes"))) {
+  for (mvar in category.vars) {
     if (length(unique(mapping[,mvar])) == 1){
       print(sprintf("%s has only 1 variation, which wouldn't be able to compare.",mvar))
       next
@@ -113,18 +104,15 @@ Go_mirkat<- function(psIN, metaData, project, orders,name=NULL){
       
       # add corvatiate into the df
       
-      for (covar in rownames(subset(metadata, Confounder =="yes"))) {
-        if (metadata[covar, "type"] == "factor") {
-          if (mvar == covar){
-            next
-          }else{
-            df.covar[,covar] <-as.numeric(mapping.cbn[,covar]  == as.character(unique(mapping.cbn[,covar] )[1]))
-          }
-          
-        } else if (metadata[covar, "type"] == "numeric") {
-          df.covar[,covar] <- mapping.cbn[,covar]
+      if (!is.null(confounder)){
+      for (covar in confounder) {
+        df.covar[,covar] <- as.numeric(mapping.cbn[,covar])
+        if (mvar == covar){
+        next
         }
       }
+      }
+
       
       # Create the UniFrac Distances
       unifracs <- GUniFrac(otu.cbn, tree.cbn, alpha = c(0, 0.5, 1))$unifracs
@@ -141,8 +129,8 @@ Go_mirkat<- function(psIN, metaData, project, orders,name=NULL){
       Ks = list(K.weighted = K.weighted, K.unweighted = K.unweighted, K.BC = K.BC)
       
       
-      if (length(rownames(subset(metadata, Confounder =="yes"))) >=1){
-        for (covar in rownames(subset(metadata, Confounder =="yes"))) {
+      if (length(confounder) >=1){
+        for (covar in confounder) {
           # Cauchy
           # cauchy <- MiRKAT(y = df[,mvar], Ks = Ks, X = df.covar, out_type = "D", method = "davies",  
           # omnibus = "cauchy", returnKRV = FALSE, returnR2 = FALSE)
@@ -159,7 +147,7 @@ Go_mirkat<- function(psIN, metaData, project, orders,name=NULL){
           }
         }
         
-      }else if(length(rownames(subset(metadata, Confounder =="yes"))) ==0){
+      }else if(length(confounder) ==0){
         
         permutation <- MiRKAT(y = df[,mvar], Ks = Ks, X = NULL, out_type = "D", method = "davies", 
                               omnibus = "permutation", returnKRV = FALSE, returnR2 = FALSE)
@@ -175,12 +163,12 @@ Go_mirkat<- function(psIN, metaData, project, orders,name=NULL){
       class(per.df.t)
       
       
-      if (length(rownames(subset(metadata, Confounder =="yes"))) >=1){
-        covars <- rownames(subset(metadata, Confounder =="yes"))[mvar != rownames(subset(metadata, Confounder =="yes"))]
-        per.df.t$Confounder <- paste(setdiff(rownames(subset(metadata, Confounder=="yes")), "SampleType"), collapse="+")
-        per.df.t$covar <- paste(setdiff(colnames(df.covar), "SampleType"), collapse="+")
+      if (length(confounder) >=1){
+        covars <- confounder[mvar != confounder]
+        per.df.t$Confounder <- paste(setdiff(confounder, "SampleType"), collapse="+")
+        per.df.t$covar <- paste(setdiff(df.covar, "SampleType"), collapse="+")
         
-      }else if(length(rownames(subset(metadata, Confounder =="yes"))) ==0){
+      }else if(length(confounder) ==0){
         per.df.t <- per.df.t
       }
       
@@ -189,10 +177,9 @@ Go_mirkat<- function(psIN, metaData, project, orders,name=NULL){
       print(res)
     }
   }
+  write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/mirkat.%s.%s%s.csv",out_table,
+                                                          project,
+                                                          ifelse(is.null(name), "", paste(name, ".", sep = "")),  
+                                                          format(Sys.Date(), "%y%m%d"), sep="/")) 
   
-  if (length(name) == 1) {
-    write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/mirkat.%s.%s.%s.csv",out_table, project,name, format(Sys.Date(), "%y%m%d"),sep="/"))
-  }else{
-    write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/mirkat.%s.%s.csv",out_table, project,format(Sys.Date(), "%y%m%d"),sep="/"))
-  }
 }

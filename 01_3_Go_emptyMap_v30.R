@@ -20,10 +20,8 @@ Go_emptyMap <- function(psIN, project){
   column.names <- c("StudyID", "Variation1", "Variation2","etc")
   col.count <- length(column.names)
   
-  # 	"Go_overview","Go_ancombc","Go_deseq2",
-  analysis <- c("type",	"baseline",	"Go_barchart", 	"Go_box",	"Go_linear","Go_clme", "Go_reg", "Go_bdiv",	"Go_perm","Go_mirkat",	 "Go_lmem","Confounder")
-
-
+  # 	"Go_overview","Go_ancombc","Go_deseq2","Go_box","Go_bdiv",	"Go_barchart","Go_linear","Go_clme","Go_perm",
+  analysis <- c("type",	"baseline",	"Go_reg", "Go_mirkat", "Go_lmem","Confounder")
 
   row.count <- length(analysis)
   

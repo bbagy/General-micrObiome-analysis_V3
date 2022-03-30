@@ -1,7 +1,7 @@
 #' A Go_box_plot
 #'
 
-Go_boxplot <- function(df, variables, project, orders=NULL, outcomes, mycols=NULL, combination=NULL,
+Go_boxplot <- function(df, category.vars, project, orders=NULL, outcomes, mycols=NULL, combination=NULL,
                        statistics = "yes", parametric= "no", star="no",ylim =NULL,
                        title= NULL, facet= NULL, paired=NULL, name= NULL, 
                        xanlgle=90,  height, width, plotCols, plotRows){
@@ -32,7 +32,7 @@ Go_boxplot <- function(df, variables, project, orders=NULL, outcomes, mycols=NUL
   
   # plot
   plotlist <- list()
-  for (mvar in variables) {
+  for (mvar in category.vars) {
     if (length(unique(df[,mvar])) < 2){
       next
     }
@@ -228,14 +228,14 @@ Go_boxplot <- function(df, variables, project, orders=NULL, outcomes, mycols=NUL
             
             
             # count or table for number of variable
-            
             if (max(table(adiv.cbn[,mvar])) > 250 & max(table(adiv.cbn[,mvar])) < 500){
               dot.size <- dot.size/2
               p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
             } else  if (max(table(adiv.cbn[,mvar])) < 250 ){
               p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
             }else if(max(table(adiv.cbn[,mvar])) > 500) {
-              p1 = p1
+              dot.size <- dot.size/3
+              p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2))
             }
             
             
@@ -354,11 +354,16 @@ Go_boxplot <- function(df, variables, project, orders=NULL, outcomes, mycols=NUL
         } else{
           p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
           
-          if (dim(adiv.na)[1] < 500){
-            p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
-          } else{
-            p1 = p1
-          }
+            # count or table for number of variable
+            if (max(table(adiv[,mvar])) > 250 & max(table(adiv[,mvar])) < 500){
+              dot.size <- dot.size/2
+              p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
+            } else  if (max(table(adiv[,mvar])) < 250 ){
+              p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
+            }else if(max(table(adiv[,mvar])) > 500) {
+              dot.size <- dot.size/3
+              p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2))
+            }
         } 
         # facet
         if (length(facet) >= 1) {

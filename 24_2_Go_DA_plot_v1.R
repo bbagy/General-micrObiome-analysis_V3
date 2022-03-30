@@ -60,7 +60,11 @@ Go_DA_plot <- function(project, file_path,files, type, plot = "volcano", fdr, fc
      dircolors <- c("#f8766d", "grey","#7cae00"); names(dircolors) <- c(as.character(basline), "NS", as.character(smvar))
     }
     
-    
+    legend.labs <- 
+      c(paste(basline, " (n=", unique(df.na$bas.count),")",sep=""),
+        paste("NS"),
+        paste(smvar, " (n=", unique(df.na$smvar.count), ")",sep=""))
+
     
 
     df.na$ancom[is.na(df.na$ancom)] <- FALSE
@@ -78,13 +82,13 @@ Go_DA_plot <- function(project, file_path,files, type, plot = "volcano", fdr, fc
     } else if(plot == "maplot"){
       print("Generating M (log ratio) A (mean average)  plots.")
       p1 <-  ggplot(df.na, aes(x=log2(baseMean +1), y=log2FoldChange, colour=deseq2)) +
-        xlab("Log2 mean expression") + ylab("Log2 fold change")+ 
+        xlab("Log2 mean of normalized counts") + ylab("Log2 fold change")+ 
         geom_hline(yintercept = c(-log2(fc), 0,log2(fc)),col = dircolors, linetype = "dotted", size = 1)
       
     } else if(plot == "forest"){
       print("Generating forest plots.")
-      resSig <- as.data.frame(subset(df.sel, padj < alpha)); resSig <- resSig[order(resSig$log2FoldChange),]
-      resSig.top <- as.data.frame(subset(resSig, abs(resSig$log2FoldChange) > beta))
+      resSig <- as.data.frame(subset(df.na, padj < fdr)); resSig <- resSig[order(resSig$log2FoldChange),]
+      resSig.top <- as.data.frame(subset(resSig, abs(resSig$log2FoldChange) > fc))
       if (dim(resSig)[1] == 0 | dim(resSig.top)[1] == 0 ){
         next
       }
@@ -97,7 +101,7 @@ Go_DA_plot <- function(project, file_path,files, type, plot = "volcano", fdr, fc
 
       p1 <- ggplot(resSig.top, aes(x=reorder(taxa,log2FoldChange), y=log2FoldChange, color=deseq2)) + 
         geom_hline(yintercept=0) + geom_point(aes(shape=ancom)) + coord_flip() + theme_classic() + 
-        scale_color_manual(values=dircolors) + scale_shape_manual(values = ancomshape) + #guides(shape = "none") +
+        scale_color_manual(values=dircolors, labels=legend.labs) + scale_shape_manual(values = ancomshape) + #guides(shape = "none") +
         #theme_classic() +theme_bw() 
         geom_errorbar(aes(x=taxa, ymin=log2FoldChange-lfcSE, max=log2FoldChange+lfcSE), width=0.2)  + 
         ylim(c(-lims, lims))+ xlab("Taxa") + ylab("log2FoldChange")+
@@ -111,9 +115,13 @@ Go_DA_plot <- function(project, file_path,files, type, plot = "volcano", fdr, fc
       }
     }
     
+
+
+
+
     
     if(plot == "volcano" |  plot == "maplot"){
-      p1 <- p1 + theme_bw() + scale_color_manual(values=dircolors) + theme(text = element_text(size=font+8),plot.title = element_text(size=font+8), legend.text=element_text(size=font+8),  legend.position="bottom",legend.justification = "left",legend.box = "vertical")  +
+      p1 <- p1 + theme_bw() + scale_color_manual(values=dircolors, labels=legend.labs) + theme(text = element_text(size=font+8),plot.title = element_text(size=font+8), legend.text=element_text(size=font+8),  legend.position="bottom",legend.justification = "left",legend.box = "vertical")  +
         geom_point(aes(shape=ancom), size=font-1.5) + scale_shape_manual(values = ancomshape)
       if(type == "taxonomy" | type == "taxanomy" |type == "bacmet" ){
         p1 <- p1 +  geom_text_repel(aes(label=ifelse(ShortName != "NA" & df.na$padj < fdr & abs(df.na$log2FoldChange) > fc, as.character(ShortName),'')), size=font, segment.fdr = 0.25, fontface="italic",max.overlaps = overlaps )
@@ -125,9 +133,9 @@ Go_DA_plot <- function(project, file_path,files, type, plot = "volcano", fdr, fc
     
     if(!is.null(df.na$des)){
       des <- unique(df.na$des)
-      p1 <- p1 + ggtitle(sprintf("%s-%s, %s vs %s (padj < %s,cutoff=%s) ", mvar, des,basline, smvar,  fdr, fc))
+      p1 <- p1 + ggtitle(sprintf("%s-%s, (padj < %s,cutoff=%s) ", mvar, des, fdr, fc))
     }else{
-      p1 <- p1 + ggtitle(sprintf("%s, %s vs %s (padj < %s,cutoff=%s) ", mvar, basline, smvar,  fdr, fc))
+      p1 <- p1 + ggtitle(sprintf("%s, (padj < %s,cutoff=%s) ", mvar,  fdr, fc))
     }
     print(p1)
   } 

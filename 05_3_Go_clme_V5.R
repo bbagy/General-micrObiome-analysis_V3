@@ -8,7 +8,7 @@
 #' Go_clme()
 
 
-Go_clme <- function(psIN, metaData, project, paired, mycols=NULL, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
+Go_clme <- function(psIN, category.vars, project, paired, mycols=NULL, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
@@ -25,9 +25,6 @@ Go_clme <- function(psIN, metaData, project, paired, mycols=NULL, node, decreasi
   out_path <- file.path(sprintf("%s_%s/pdf",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_path)) dir.create(out_path)
   
-  
-  metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
-  metadata <- as.data.frame(t(metadataInput))
   
     # logic for out file
     # "name" definition
@@ -63,7 +60,7 @@ Go_clme <- function(psIN, metaData, project, paired, mycols=NULL, node, decreasi
   print(cons)
   
   plotlist <- list()
-  for (mvar in rownames(subset(metadata, Go_clme == "yes"))) {
+  for (mvar in category.vars) {
     print(mvar)
     
     if (length(unique(adiv[,mvar])) < 2){

@@ -12,7 +12,7 @@
 #' Go_perm()
 
 
-Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=NULL, des, name=NULL){
+Go_perm <- function(psIN, category.vars, project, distance, distance_metrics, confounder=NULL, des, name=NULL){
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out)) dir.create(out)
@@ -24,12 +24,7 @@ Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=
   out_distance <- file.path(sprintf("%s/distance",out_path)) 
   if(!file_test("-d", out_distance)) dir.create(out_distance)
   
-  
-  #meta data
-  metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
-  metadata <- as.data.frame(t(metadataInput))
-  
-  
+
   # Run
   if (!is.null(des)) {
     # Uni
@@ -42,7 +37,7 @@ Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=
   
   res.pair <-{}
   # Run
-  for (mvar in rownames(subset(metadata, Go_perm =="yes"))) {
+  for (mvar in category.vars) {
     mapping.sel.na <- mapping.sel[!is.na(mapping.sel[,mvar]), ]
     if (length(unique(mapping.sel.na[,mvar])) == 1){
       cat(sprintf("there is no group campare to %s\n",unique(mapping.sel[,mvar])))
@@ -55,18 +50,13 @@ Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=
       
       
       ## fix factor  and  numeric
-      if (metadata[mvar, "type"] == "factor") {
-        mapping.sel.na[,mvar] <- factor(mapping.sel.na[,mvar])
-        sample_data(psIN.sel) <- mapping.sel.na
-      } else if (metadata[mvar, "type"] == "numeric") {
-        next
-      }
+      mapping.sel.na[,mvar] <- factor(mapping.sel.na[,mvar])
       
       distance <- Go_dist(psIN = psIN.sel, project = project, distance_metrics = distance_metric)
       
       
       # pairwise.adonis2
-      # pair.ado <- pairwise.adonis2(x=as.dist(distance[[distance_metric]]), factors = mapping.sel.na[,mvar], map=mapping.sel.na, adjust=adjust, mvar=mvar)
+      # pair.ado <- pairwise.adonis2(x=as.dist(distance[[distance_metric]]), factors = mapping.sel.na[,mvar], map=mapping.sel.na, confounder=adjust, mvar=mvar)
       
       x <- as.dist(distance[[distance_metric]])
       factors <-  mapping.sel.na[,mvar]
@@ -96,8 +86,8 @@ Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=
           next
         }
         
-        if (!is.null(adjust)) {
-          form <- as.formula(sprintf("x1 ~ %s + %s", mvar, paste(setdiff(adjust, "SampleType"), collapse="+")))
+        if (!is.null(confounder)) {
+          form <- as.formula(sprintf("x1 ~ %s + %s", mvar, paste(setdiff(confounder, "SampleType"), collapse="+")))
           print(form)
         }else{
           form <- as.formula(sprintf("x1 ~ %s", mvar))
@@ -121,7 +111,7 @@ Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=
       tmp <- as.data.frame(pairw.res)
       tmp$distance_metric <- distance_metric
       tmp$mvar <- mvar
-      tmp$adjusted <- paste(setdiff(adjust, "SampleType"), collapse="+")
+      tmp$adjusted <- paste(setdiff(confounder, "SampleType"), collapse="+")
       res.pair <- rbind(res.pair, tmp)
     }
   }
@@ -134,7 +124,7 @@ Go_perm <- function(psIN, metaData, project, distance, distance_metrics, adjust=
   # output
     write.csv(res.pair, quote = FALSE,col.names = NA, sprintf("%s/pair_permanova.%s.%s%s%s%s.csv", out_perm, 
               project, 
-              ifelse(is.null(adjust), "", paste(adjust, "adjusted.", sep = "")), 
+              ifelse(is.null(confounder), "", paste(confounder, "adjusted.", sep = "")), 
               ifelse(is.null(des), "", paste(des, ".", sep = "")), 
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 
               format(Sys.Date(), "%y%m%d")),sep="/")
