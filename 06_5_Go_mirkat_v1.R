@@ -1,5 +1,5 @@
 
-Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,name=NULL){
+Go_mirkat<- function(psIN, project, cate.vars, cate.conf = NULL,  orders,name=NULL){
   # install bioconductor
   if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
@@ -44,7 +44,7 @@ Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,na
   
   # check by variables
   mapping <- data.frame(sample_data(psIN))
-  for (mvar in  confounder) {
+  for (mvar in  cate.conf) {
    mapping[,mvar] <- factor(mapping[,mvar])
   }
   
@@ -52,7 +52,7 @@ Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,na
   
   
   res <- {}
-  for (mvar in category.vars) {
+  for (mvar in cate.vars) {
     if (length(unique(mapping[,mvar])) == 1){
       print(sprintf("%s has only 1 variation, which wouldn't be able to compare.",mvar))
       next
@@ -104,8 +104,8 @@ Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,na
       
       # add corvatiate into the df
       
-      if (!is.null(confounder)){
-      for (covar in confounder) {
+      if (!is.null(cate.conf)){
+      for (covar in cate.conf) {
         df.covar[,covar] <- as.numeric(mapping.cbn[,covar])
         if (mvar == covar){
         next
@@ -129,8 +129,8 @@ Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,na
       Ks = list(K.weighted = K.weighted, K.unweighted = K.unweighted, K.BC = K.BC)
       
       
-      if (length(confounder) >=1){
-        for (covar in confounder) {
+      if (length(cate.conf) >=1){
+        for (covar in cate.conf) {
           # Cauchy
           # cauchy <- MiRKAT(y = df[,mvar], Ks = Ks, X = df.covar, out_type = "D", method = "davies",  
           # omnibus = "cauchy", returnKRV = FALSE, returnR2 = FALSE)
@@ -147,7 +147,7 @@ Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,na
           }
         }
         
-      }else if(length(confounder) ==0){
+      }else if(length(cate.conf) ==0){
         
         permutation <- MiRKAT(y = df[,mvar], Ks = Ks, X = NULL, out_type = "D", method = "davies", 
                               omnibus = "permutation", returnKRV = FALSE, returnR2 = FALSE)
@@ -163,12 +163,12 @@ Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,na
       class(per.df.t)
       
       
-      if (length(confounder) >=1){
-        covars <- confounder[mvar != confounder]
-        per.df.t$Confounder <- paste(setdiff(confounder, "SampleType"), collapse="+")
+      if (length(cate.conf) >=1){
+        covars <- cate.conf[mvar != cate.conf]
+        per.df.t$cate.conf <- paste(setdiff(cate.conf, "SampleType"), collapse="+")
         per.df.t$covar <- paste(setdiff(df.covar, "SampleType"), collapse="+")
         
-      }else if(length(confounder) ==0){
+      }else if(length(cate.conf) ==0){
         per.df.t <- per.df.t
       }
       

@@ -59,7 +59,7 @@ cat(blue("#--------------------------------------------------------------# \n"))
 cat(blue("#------       General analysis Of microbiome (Go)        ------# \n"))
 cat(blue("#------    Quick statistics and visualization tools      ------# \n"))
 cat(blue("#--------------------------------------------------------------# \n"))
-cat(red("                                      Version: Go_tools.2.9.8 \n"))
+cat(red("                                      Version: Go_tools.3.0.0 \n"))
 cat("                                              Write by Heekuk \n")
 cat(yellow("All the required packages were installed.\n"))
 cat(yellow("All the required packages were loaded.\n"))
@@ -492,7 +492,7 @@ Go_qq <- function(psIN, project, alpha_metrics, name, height, width){
 #' Go_barchart()
 
 
-Go_barchart <- function(psIN, category.vars, project, taxanames, orders,
+Go_barchart <- function(psIN, cate.vars, project, taxanames, orders,
                         simple = FALSE,  
                         mycols=NULL, 
                         relative = T,
@@ -633,7 +633,7 @@ if(relative == T){
     #mapping.sel[df2$SampleID, "StudyID"]
    
     # add groups
-    for (mvar in category.vars) {
+    for (mvar in cate.vars) {
       df.SampleIDstr$Group <- as.character(mapping.sel[df.SampleIDstr$SampleID, mvar])
       df2[,mvar] <- mapping.sel[df2$SampleID, mvar]
 
@@ -729,7 +729,7 @@ if(relative == T){
     
     
     if (!is.null(facet)) {
-      for (mvar in category.vars) {        
+      for (mvar in cate.vars) {        
         if (facet == mvar) {
           next
         }
@@ -759,7 +759,7 @@ if(relative == T){
       }
 
     }     else if (is.null(facet) & simple == FALSE) {
-      for (mvar in category.vars) {
+      for (mvar in cate.vars) {
         print("B")
         print(sprintf("Facet by %s",mvar))
 
@@ -780,7 +780,7 @@ if(relative == T){
         print(p)
       }
     } else if (is.null(facet) & simple == TRUE) {
-      for (mvar in category.vars) {
+      for (mvar in cate.vars) {
 
         print("C")
         print("Simpe plot")
@@ -1158,14 +1158,22 @@ Go_adiv <- function(psIN, project, alpha_metrics){
 #' A Go_box_plot
 #'
 
-Go_boxplot <- function(df, category.vars, project, orders=NULL, outcomes, mycols=NULL, combination=NULL,
-                       statistics = "yes", parametric= "no", star="no",ylim =NULL,
-                       title= NULL, facet= NULL, paired=NULL, name= NULL, 
-                       xanlgle=90,  height, width, plotCols, plotRows){
+Go_boxplot <- function(df, cate.vars, project, outcomes,
+                       orders=NULL, 
+                       mycols=NULL, 
+                       combination=NULL,
+                       ylim =NULL,
+                       title= NULL, 
+                       facet= NULL, 
+                       paired=NULL, 
+                       name= NULL, 
+                       statistics = "yes", 
+                       parametric= "no", 
+                       star="no",
+                       xanlgle=90,  
+                       height, width, plotCols, plotRows){
   
   if(!is.null(dev.list())) dev.off()
-  
-  
   
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
@@ -1189,7 +1197,7 @@ Go_boxplot <- function(df, category.vars, project, orders=NULL, outcomes, mycols
   
   # plot
   plotlist <- list()
-  for (mvar in category.vars) {
+  for (mvar in cate.vars) {
     if (length(unique(df[,mvar])) < 2){
       next
     }
@@ -1201,23 +1209,40 @@ Go_boxplot <- function(df, category.vars, project, orders=NULL, outcomes, mycols
     } else {}
     
     # remove Na
-    adiv <- data.frame(df)
+    df <- data.frame(df)
     
-    adiv[,mvar] <- as.character(adiv[,mvar]);adiv[,mvar]
-    adiv[,mvar][adiv[,mvar]==""] <- "NA";adiv[,mvar]
-    adiv.na <- subset(adiv, adiv[,mvar] != "NA");adiv.na[,mvar]  # subset 를 사용한 NA 삭제
-    adiv.na[,mvar] <- as.factor(adiv.na[,mvar]);adiv.na[,mvar]  
+    df[,mvar] <- as.character(df[,mvar]);df[,mvar]
+    df[,mvar][df[,mvar]==""] <- "NA";df[,mvar]
+    df.na <- subset(df, df[,mvar] != "NA");df.na[,mvar]  # subset 를 사용한 NA 삭제
+    df.na[,mvar] <- as.factor(df.na[,mvar]);df.na[,mvar]  
     
+    df.na[,mvar] <- factor(df.na[,mvar], levels = intersect(orders, df.na[,mvar]))
+    
+    
+    
+    
+    # Add number of samples in the group
+    renamed_levels <- as.character(levels(df.na[,mvar]));renamed_levels
+    oldNames <- unique(df.na[,mvar]);oldNames
+    if (length(renamed_levels) == 0) {
+      renamed_levels <- oldNames
+    }
+    for (name in oldNames) {
+      total <- length(which(df.na[,mvar] == name));total
+      new_n <- paste(name, " (n=", total, ")", sep="");new_n
+      levels(df.na[[mvar]])[levels(df.na[[mvar]])== name] <- new_n
+      renamed_levels <- replace(renamed_levels, renamed_levels == name, new_n);renamed_levels
+    }
     
     
     print(sprintf("##-- %s (total without NA: %s/%s) --##", 
-                  mvar, dim(adiv.na)[1], dim(adiv)[1]))
+                  mvar, dim(df.na)[1], dim(df)[1]))
     
-    if (length(unique(adiv.na[,mvar])) ==1) {
+    if (length(unique(df.na[,mvar])) ==1) {
       next
     }
     
-    summary.adiv.na <- summary(adiv.na[,mvar])
+    summary.df.na <- summary(df.na[,mvar])
     
     #------------------------------#
     # for group combination or not #
@@ -1225,10 +1250,7 @@ Go_boxplot <- function(df, category.vars, project, orders=NULL, outcomes, mycols
     
     
     if (!is.null(combination)){
-
-      adiv.na[,mvar] <- factor(adiv.na[,mvar], levels = intersect(orders, adiv.na[,mvar]))
-      
-      group.cbn <- combn(x = levels(adiv.na[,mvar]), m = combination)
+      group.cbn <- combn(x = levels(df.na[,mvar]), m = combination)
       
       #print(count(group.cbn))
       
@@ -1246,36 +1268,36 @@ Go_boxplot <- function(df, category.vars, project, orders=NULL, outcomes, mycols
         if(combination ==2){
           basline <- group.combination[1]
           smvar <- group.combination[2]
-          adiv.cbn <- subset(adiv.na, adiv.na[,mvar] %in% c(basline,smvar)) 
+          df.cbn <- subset(df.na, df.na[,mvar] %in% c(basline,smvar)) 
         } else if(combination ==3){
           basline <- group.combination[1]
           smvar1 <- group.combination[2]
           smvar2 <- group.combination[3]
-          adiv.cbn <- subset(adiv.na, adiv.na[,mvar] %in% c(basline,smvar1, smvar2)) 
+          df.cbn <- subset(df.na, df.na[,mvar] %in% c(basline,smvar1, smvar2)) 
         }else if(combination ==4){
           basline <- group.combination[1]
           smvar1 <- group.combination[2]
           smvar2 <- group.combination[3]
           smvar3 <- group.combination[4]
-          adiv.cbn <- subset(adiv.na, adiv.na[,mvar] %in% c(basline,smvar1, smvar2,smvar3)) 
+          df.cbn <- subset(df.na, df.na[,mvar] %in% c(basline,smvar1, smvar2,smvar3)) 
         }else if(combination ==5){
           basline <- group.combination[1]
           smvar1 <- group.combination[2]
           smvar2 <- group.combination[3]
           smvar3 <- group.combination[4]
           smvar4 <- group.combination[5]
-          adiv.cbn <- subset(adiv.na, adiv.na[,mvar] %in% c(basline,smvar1, smvar2,smvar3,smvar4)) 
+          df.cbn <- subset(df.na, df.na[,mvar] %in% c(basline,smvar1, smvar2,smvar3,smvar4)) 
         }else{
           print("combination should be 2, 3, 4 and 5 only.")
           break
         }
         
-        unique(adiv.cbn[,mvar])
+        unique(df.cbn[,mvar])
         
         
         # make a comnination for stat
-        adiv.cbn[,mvar] <- factor(adiv.cbn[,mvar])
-        cbn <- combn(x = levels(adiv.cbn[,mvar]), m = 2)
+        df.cbn[,mvar] <- factor(df.cbn[,mvar])
+        cbn <- combn(x = levels(df.cbn[,mvar]), m = 2)
         
         
         my_comparisons <- {}
@@ -1302,27 +1324,21 @@ Go_boxplot <- function(df, category.vars, project, orders=NULL, outcomes, mycols
           } 
           
           
-          # re-order
-          if (length(orders) >= 1) {
-            adiv.cbn[,mvar] <- factor(adiv.cbn[,mvar], levels = orders)
-          } else {
-            adiv.cbn[,mvar] <- factor(adiv.cbn[,mvar])
-          }
           
           # remove NA for facet
           if (length(facet) >= 1) {
             for (fc in facet){
-              adiv.cbn[,fc] <- as.character(adiv.cbn[,fc]);adiv.cbn[,fc]
-              adiv.cbn[,fc][adiv.cbn[,fc] == ""] <- "NA"
-              adiv.cbn.sel <- adiv.cbn[!is.na(adiv.cbn[,fc]), ]
-              adiv.cbn <- adiv.cbn.sel 
+              df.cbn[,fc] <- as.character(df.cbn[,fc]);df.cbn[,fc]
+              df.cbn[,fc][df.cbn[,fc] == ""] <- "NA"
+              df.cbn.sel <- df.cbn[!is.na(df.cbn[,fc]), ]
+              df.cbn <- df.cbn.sel 
               # facet or not
-              adiv.cbn[,fc] <- factor(adiv.cbn[,fc], levels = orders)
+              df.cbn[,fc] <- factor(df.cbn[,fc], levels = orders)
             }
           }
           
-          
-          p1 <- ggplot(adiv.cbn, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
+  
+          p1 <- ggplot(df.cbn, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
             theme_bw() + theme(strip.background = element_blank()) +
             theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5),
                   plot.title=element_text(size=9,face="bold")) 
@@ -1365,7 +1381,7 @@ Go_boxplot <- function(df, category.vars, project, orders=NULL, outcomes, mycols
             box.tickness = 0.5
           }
           
-          if(oc == "Shannon"){
+          if(oc != "Chao1"){
             if(!is.null(ylim)){
               p1 = p1 + ylim(ylim[1] , ylim[2])
             }else(
@@ -1385,12 +1401,12 @@ Go_boxplot <- function(df, category.vars, project, orders=NULL, outcomes, mycols
             
             
             # count or table for number of variable
-            if (max(table(adiv.cbn[,mvar])) > 250 & max(table(adiv.cbn[,mvar])) < 500){
+            if (max(table(df.cbn[,mvar])) > 250 & max(table(df.cbn[,mvar])) < 500){
               dot.size <- dot.size/2
               p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
-            } else  if (max(table(adiv.cbn[,mvar])) < 250 ){
+            } else  if (max(table(df.cbn[,mvar])) < 250 ){
               p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
-            }else if(max(table(adiv.cbn[,mvar])) > 500) {
+            }else if(max(table(df.cbn[,mvar])) > 500) {
               dot.size <- dot.size/3
               p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2))
             }
@@ -1400,7 +1416,7 @@ Go_boxplot <- function(df, category.vars, project, orders=NULL, outcomes, mycols
           
           # facet
           if (length(facet) >= 1) {
-            facetCol <- length(unique(adiv[,facet]))
+            facetCol <- length(unique(df[,facet]))
             p1 = p1 + facet_wrap(as.formula(sprintf("~ %s" , paste(setdiff(facet, "SocpleType"), collapse="+"))), scales="free_x", ncol = facetCol) 
             p1 = p1 + guides(color = "none", size = "none", shape= "none")
           } else {
@@ -1412,7 +1428,7 @@ Go_boxplot <- function(df, category.vars, project, orders=NULL, outcomes, mycols
       }
     }else{
       # make a comnination for stat
-      cbn <- combn(x = levels(adiv.na[,mvar]), m = 2)
+      cbn <- combn(x = levels(df.na[,mvar]), m = 2)
       
       my_comparisons <- {}
       for(i in 1:ncol(cbn)){
@@ -1431,30 +1447,25 @@ Go_boxplot <- function(df, category.vars, project, orders=NULL, outcomes, mycols
         
         
         
-        # re-order
-        if (!is.null(orders)) {
-          adiv.na[,mvar] <- factor(adiv.na[,mvar], levels = orders)
-        } else {
-          adiv.na[,mvar] <- factor(adiv.na[,mvar])
-        }
-        
         # remove NA for facet
         if (!is.null(facet)) {
           for (fc in facet){
-            adiv.na[,fc] <- as.character(adiv.na[,fc]);adiv.na[,fc]
-            adiv.na[,fc][adiv.na[,fc] == ""] <- "NA"
-            adiv.na.sel <- adiv.na[!is.na(adiv.na[,fc]), ]
-            adiv.na <- adiv.na.sel 
+            df.na[,fc] <- as.character(df.na[,fc]);df.na[,fc]
+            df.na[,fc][df.na[,fc] == ""] <- "NA"
+            df.na.sel <- df.na[!is.na(df.na[,fc]), ]
+            df.na <- df.na.sel 
             # facet or not
-            adiv.na[,fc] <- factor(adiv.na[,fc], levels = orders)
+            df.na[,fc] <- factor(df.na[,fc], levels = orders)
           }
         }
         
         
-        p1 <- ggplot(adiv.na, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
+        p1 <- ggplot(df.na, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
           theme_bw() + theme(strip.background = element_blank()) +
           theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5),
                 plot.title=element_text(size=9,face="bold"))  
+
+
         # scale_color_brewer(palette=colorset)
         
         if(!is.null(mycols)){
@@ -1512,19 +1523,19 @@ Go_boxplot <- function(df, category.vars, project, orders=NULL, outcomes, mycols
           p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
           
             # count or table for number of variable
-            if (max(table(adiv[,mvar])) > 250 & max(table(adiv[,mvar])) < 500){
+            if (max(table(df[,mvar])) > 250 & max(table(df[,mvar])) < 500){
               dot.size <- dot.size/2
               p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
-            } else  if (max(table(adiv[,mvar])) < 250 ){
+            } else  if (max(table(df[,mvar])) < 250 ){
               p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2)) # alpha=0.3
-            }else if(max(table(adiv[,mvar])) > 500) {
+            }else if(max(table(df[,mvar])) > 500) {
               dot.size <- dot.size/3
               p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2))
             }
         } 
         # facet
         if (length(facet) >= 1) {
-          facetCol <- length(unique(adiv[,facet]))
+          facetCol <- length(unique(df[,facet]))
           p1 = p1 + facet_wrap(as.formula(sprintf("~ %s" , paste(setdiff(facet, "SocpleType"), collapse="+"))), scales="free_x", ncol = facetCol) 
           p1 = p1 + guides(color = "none", size = "none", shape= "none")
         } else {
@@ -1548,7 +1559,7 @@ Go_boxplot <- function(df, category.vars, project, orders=NULL, outcomes, mycols
 #' Go_clme()
 
 
-Go_clme <- function(psIN, category.vars, project, paired, mycols=NULL, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
+Go_clme <- function(psIN, cate.vars, project, paired, mycols=NULL, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
@@ -1600,7 +1611,7 @@ Go_clme <- function(psIN, category.vars, project, paired, mycols=NULL, node, dec
   print(cons)
   
   plotlist <- list()
-  for (mvar in category.vars) {
+  for (mvar in cate.vars) {
     print(mvar)
     
     if (length(unique(adiv[,mvar])) < 2){
@@ -1722,7 +1733,7 @@ Go_clme <- function(psIN, category.vars, project, paired, mycols=NULL, node, dec
 #' @export
 #' @examples
 
-Go_linear <- function(df, numeric.vars, project, outcomes, mycols, maingroup, orders, name=NULL, height, width, plotCols, plotRows){
+Go_linear <- function(df, cont.vars, project, outcomes, mycols, maingroup, orders, name=NULL, height, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
@@ -1751,7 +1762,7 @@ Go_linear <- function(df, numeric.vars, project, outcomes, mycols, maingroup, or
   
   # plot
   plotlist <- list()
-  for (mvar in numeric.vars) {
+  for (mvar in cont.vars) {
     if (!is.null(maingroup)){
       if (mvar == maingroup){
         next
@@ -2187,8 +2198,16 @@ Go_dualYplot <- function(df, TaxTab, metaData, project, orders=NULL, Box, Line1,
 #'
 
 
-Go_bdiv <- function(psIN, category.vars, project, orders, mycols=NULL,combination=NULL,
-distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NULL, name=NULL, height, width){
+Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
+                    plot="PCoA",
+                    ellipse="yes",
+                    mycols=NULL,
+                    combination=NULL,
+                    shapes = NULL, 
+                    ID = NULL,  
+                    facet=NULL, 
+                    name=NULL, 
+                    height, width){
     
   if(!is.null(dev.list())) dev.off()
    
@@ -2211,13 +2230,9 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
 
   
-  
-
-  
   plotlist <- list()
-  for (mvar in category.vars) {
+  for (mvar in cate.vars) {
     mapping <- data.frame(sample_data(psIN))
-
     mapping[,mvar] <- factor(mapping[,mvar])
 
     sample_data(psIN) <- mapping
@@ -2241,8 +2256,6 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
     
     if (!is.null(combination)){
       mapping[,mvar] <- factor(mapping[,mvar], levels = intersect(orders, mapping[,mvar]))
-      
-      
       group.cbn <- combn(x = levels(mapping[,mvar]), m = combination)
       
       #print(count(group.cbn))
@@ -2326,6 +2339,22 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
           pdataframe[,facet] <- factor(pdataframe[,facet], levels = orders)
           
           pdataframe[,mvar] <- factor(pdataframe[,mvar], levels = orders)
+
+
+          # Add number of samples in the group
+          renamed_levels <- as.character(levels(pdataframe[,mvar]));renamed_levels
+          oldNames <- unique(pdataframe[,mvar]);oldNames
+          if (length(renamed_levels) == 0) {
+            renamed_levels <- oldNames
+          }
+          for (name in oldNames) {
+            total <- length(which(pdataframe[,mvar] == name));total
+            new_n <- paste(name, " (n=", total, ")", sep="");new_n
+            levels(pdataframe[[mvar]])[levels(pdataframe[[mvar]])== name] <- new_n
+            renamed_levels <- replace(renamed_levels, renamed_levels == name, new_n);renamed_levels
+          }
+    
+
           
           
           # Plots
@@ -2335,10 +2364,10 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
           if (!is.null(shapes)) {
             
             pdataframe[,shapes] <- factor(pdataframe[,shapes], levels = orders)
-            p = p +  geom_point(aes_string(shape=shapes), size=1.5, alpha = 3) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
+            p = p +  geom_point(aes_string(shape=shapes), size=1, alpha = 1) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
             
           }else{
-            p = p + geom_point(size=1.5, alpha = 3)+ ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
+            p = p + geom_point(size=1, alpha = 1)+ ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
           }
           
           p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
@@ -2380,13 +2409,72 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
             p = p
           }
           
+          
+          #===================================#
+          # Add permanova for two combination #
+          #===================================#
+          if(combination ==2){
+            set.seed(1)
+            distance <- Go_dist(psIN = psIN.cbn.na, project = project, distance_metrics = distance_metric)
+            
+            x <- as.dist(distance[[distance_metric]])
+            factors <-  mapping.sel.na.rem[,mvar]
+            
+            co <- combn(unique(as.character(mapping.sel.na.rem[,mvar])),2)
+            R2 <- c()
+            p.value <- c()
+            F.Model <- c()
+            pairs <- c()
+            SumsOfSqs <- c()
+            Df <- c()
+            
+            x1=as.matrix(x)[factors %in% unique(factors), factors %in% unique(factors)]
+            
+            # run
+            map.pair <- subset(mapping.sel.na.rem, mapping.sel.na.rem[,mvar] %in% unique(factors))
+            
+            # count to table
+            if (table(map.pair[,mvar])[1] <=2 | table(map.pair[,mvar])[2] <=2){
+              p=p
+              next
+            }
+            
+            form <- as.formula(sprintf("x1 ~ %s", mvar))
+            print(form)
+            
+            ad <- adonis2(form, data = map.pair, permutations=999, by="terms")# "terms"  "margin" NULL
+            
+            pairs <- c(paste(co[1],'vs',co[2]));pairs
+            Df <- c(Df,ad[1,1])
+            SumsOfSqs <- c(SumsOfSqs, ad[1,2])
+            R2 <- round(c(R2,ad[1,3]), digits=3)
+            F.Model <- c(F.Model,ad[1,4]);
+            p.value <- c(p.value,ad[1,5])
+            
+            pairw.res <- data.frame(pairs,Df,SumsOfSqs,R2,F.Model,p.value)
+            
+            class(pairw.res) <- c("pwadonis", "data.frame")
+            # end adonis end
+            tmp <- as.data.frame(pairw.res)
+            tmp$distance_metric <- distance_metric
+            tmp$padj <- p.adjust(tmp$p.value, method="bonferroni")
+            
+            
+            
+            
+            grob <- grobTree(textGrob(paste(distance_metric, "\nR2=",R2,"\nPERMANOVA p=",tmp$padj,sep=""), x=0.01,  y=0.15, hjust=0,
+                                      gp=gpar(fontsize=8))) #, fontface="italic"
+            p = p + annotation_custom(grob)
+          }
+          
+          
           #plotlist[[length(plotlist)+1]] <- p
           
           print(p)
           
         }
       }
-    }    else{
+    }  else{
       for(distance_metric in distance_metrics){
         # remove na
         mapping.sel <- data.frame(sample_data(psIN))
@@ -2431,6 +2519,19 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
         
         pdataframe[,mvar] <- factor(pdataframe[,mvar], levels = orders)
         
+        # Add number of samples in the group
+        renamed_levels <- as.character(levels(pdataframe[,mvar]));renamed_levels
+        oldNames <- unique(pdataframe[,mvar]);oldNames
+        if (length(renamed_levels) == 0) {
+          renamed_levels <- oldNames
+        }
+        for (name in oldNames) {
+          total <- length(which(pdataframe[,mvar] == name));total
+          new_n <- paste(name, " (n=", total, ")", sep="");new_n
+          levels(pdataframe[[mvar]])[levels(pdataframe[[mvar]])== name] <- new_n
+          renamed_levels <- replace(renamed_levels, renamed_levels == name, new_n);renamed_levels
+        }
+        
         
         # Plots
         p = ggplot(pdataframe, aes_string("Axis_1", "Axis_2", color=mvar))
@@ -2439,10 +2540,10 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
         if (!is.null(shapes)) {
           
           pdataframe[,shapes] <- factor(pdataframe[,shapes], levels = orders)
-          p = p +  geom_point(aes_string(shape=shapes), size=1.5, alpha = 3) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
+          p = p +  geom_point(aes_string(shape=shapes), size=1, alpha = 1) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
           
         }else{
-          p = p + geom_point(size=1.5, alpha = 3)+ ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
+          p = p + geom_point(size=1, alpha = 1)+ ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
         }
         
         p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
@@ -2474,10 +2575,6 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
           p = p 
         }
         
-        
-        
-        
-        
         if (!is.null(facet)) {
           ncol <- length(unique(mapping.sel.na.rem[,facet]))
           p = p + facet_wrap(as.formula(sprintf("~ %s", facet)), scales="free_x", ncol = ncol)
@@ -2485,7 +2582,6 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
         else {
           p = p
         }
-        
         #plotlist[[length(plotlist)+1]] <- p
         print(p)
       }
@@ -2536,7 +2632,7 @@ Go_dist <- function(psIN, project, distance_metrics){
 #' Go_perm()
 
 
-Go_perm <- function(psIN, category.vars, project, distance, distance_metrics, confounder=NULL, des, name=NULL){
+Go_perm <- function(psIN, cate.vars, project, distance, distance_metrics, confounder=NULL, des, name=NULL){
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out)) dir.create(out)
@@ -2561,7 +2657,7 @@ Go_perm <- function(psIN, category.vars, project, distance, distance_metrics, co
   
   res.pair <-{}
   # Run
-  for (mvar in category.vars) {
+  for (mvar in cate.vars) {
     mapping.sel.na <- mapping.sel[!is.na(mapping.sel[,mvar]), ]
     if (length(unique(mapping.sel.na[,mvar])) == 1){
       cat(sprintf("there is no group campare to %s\n",unique(mapping.sel[,mvar])))
@@ -2657,7 +2753,7 @@ Go_perm <- function(psIN, category.vars, project, distance, distance_metrics, co
   return(res.pair)
 }
 
-Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,name=NULL){
+Go_mirkat<- function(psIN, project, cate.vars, cate.conf = NULL,  orders,name=NULL){
   # install bioconductor
   if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
@@ -2702,7 +2798,7 @@ Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,na
   
   # check by variables
   mapping <- data.frame(sample_data(psIN))
-  for (mvar in  confounder) {
+  for (mvar in  cate.conf) {
    mapping[,mvar] <- factor(mapping[,mvar])
   }
   
@@ -2710,7 +2806,7 @@ Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,na
   
   
   res <- {}
-  for (mvar in category.vars) {
+  for (mvar in cate.vars) {
     if (length(unique(mapping[,mvar])) == 1){
       print(sprintf("%s has only 1 variation, which wouldn't be able to compare.",mvar))
       next
@@ -2762,8 +2858,8 @@ Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,na
       
       # add corvatiate into the df
       
-      if (!is.null(confounder)){
-      for (covar in confounder) {
+      if (!is.null(cate.conf)){
+      for (covar in cate.conf) {
         df.covar[,covar] <- as.numeric(mapping.cbn[,covar])
         if (mvar == covar){
         next
@@ -2787,8 +2883,8 @@ Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,na
       Ks = list(K.weighted = K.weighted, K.unweighted = K.unweighted, K.BC = K.BC)
       
       
-      if (length(confounder) >=1){
-        for (covar in confounder) {
+      if (length(cate.conf) >=1){
+        for (covar in cate.conf) {
           # Cauchy
           # cauchy <- MiRKAT(y = df[,mvar], Ks = Ks, X = df.covar, out_type = "D", method = "davies",  
           # omnibus = "cauchy", returnKRV = FALSE, returnR2 = FALSE)
@@ -2805,7 +2901,7 @@ Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,na
           }
         }
         
-      }else if(length(confounder) ==0){
+      }else if(length(cate.conf) ==0){
         
         permutation <- MiRKAT(y = df[,mvar], Ks = Ks, X = NULL, out_type = "D", method = "davies", 
                               omnibus = "permutation", returnKRV = FALSE, returnR2 = FALSE)
@@ -2821,12 +2917,12 @@ Go_mirkat<- function(psIN, project, category.vars, confounder = NULL,  orders,na
       class(per.df.t)
       
       
-      if (length(confounder) >=1){
-        covars <- confounder[mvar != confounder]
-        per.df.t$Confounder <- paste(setdiff(confounder, "SampleType"), collapse="+")
+      if (length(cate.conf) >=1){
+        covars <- cate.conf[mvar != cate.conf]
+        per.df.t$cate.conf <- paste(setdiff(cate.conf, "SampleType"), collapse="+")
         per.df.t$covar <- paste(setdiff(df.covar, "SampleType"), collapse="+")
         
-      }else if(length(confounder) ==0){
+      }else if(length(cate.conf) ==0){
         per.df.t <- per.df.t
       }
       
@@ -6572,7 +6668,7 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NUL
 
 
 Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type = "other", 
-                  category.vars,  confounder=NULL, orders=NULL,
+                  cate.vars,  cate.conf=NULL, orders=NULL,
                   des=NULL, name=NULL, fdr=0.05){
 
   # out dir
@@ -6600,7 +6696,7 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
   
   # start
   res <- {}
-  for (mvar in category.vars) {
+  for (mvar in cate.vars) {
     if (length(unique(mapping[, mvar])) == 1) {
       next
     }
@@ -6683,8 +6779,8 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
       exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
     }
 
-    if (length(confounder) >= 1) {
-      form <-as.formula(sprintf("~ %s + %s", mvar, paste(setdiff(confounder, "SampleType"), collapse="+")))
+    if (length(cate.conf) >= 1) {
+      form <-as.formula(sprintf("~ %s + %s", mvar, paste(setdiff(cate.conf, "SampleType"), collapse="+")))
       print(form)
       dds = phyloseq_to_deseq2(psIN.cb, form)
     }    else {
@@ -7057,9 +7153,7 @@ Go_DA_plot <- function(project, file_path,files, type, plot = "volcano", fdr, fc
     print(p1)
   } 
   dev.off()
-}
-
-#' A Go_deseq2_heat
+}#' A Go_deseq2_heat
 #' 
 Go_DA_heat <- function(df, project, data_type, facet,groupby,font, alpha,beta, orders, name, height, width){
     

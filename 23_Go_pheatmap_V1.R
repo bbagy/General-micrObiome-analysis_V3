@@ -2,6 +2,7 @@
 
 Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NULL,Ntax=NULL, name=NULL,
                         show_rownames = T,show_colnames = F,type,showPhylum = T,
+                        cutree_rows = NA, cutree_cols = NA,
                         cluster_rows = T,cluster_cols = T, 
                         width){
   # BiocManager::install("ComplexHeatmap")
@@ -286,6 +287,7 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NUL
                                   cluster_rows = cluster_rows,
                                   cluster_cols = cluster_cols,
                                   labels_row=taxaTab$Species,
+                                  cutree_rows = cutree_rows, cutree_cols = cutree_cols,
                                   #color=c("seashell1", "seashell2", "seashell3"),
                                   #breaks= bk,
                                   #legend_breaks= bk,
@@ -300,6 +302,7 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NUL
                                   cluster_rows = cluster_rows,
                                   cluster_cols = cluster_cols,
                                   labels_row=taxaTab$Species,
+                                  cutree_rows = cutree_rows, cutree_cols = cutree_cols,
                                   #color=c("seashell1", "seashell2", "seashell3"),
                                   #breaks= bk,
                                   #legend_breaks= bk,

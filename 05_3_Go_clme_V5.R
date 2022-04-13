@@ -8,7 +8,7 @@
 #' Go_clme()
 
 
-Go_clme <- function(psIN, category.vars, project, paired, mycols=NULL, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
+Go_clme <- function(psIN, cate.vars, project, paired, mycols=NULL, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
@@ -60,7 +60,7 @@ Go_clme <- function(psIN, category.vars, project, paired, mycols=NULL, node, dec
   print(cons)
   
   plotlist <- list()
-  for (mvar in category.vars) {
+  for (mvar in cate.vars) {
     print(mvar)
     
     if (length(unique(adiv[,mvar])) < 2){

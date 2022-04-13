@@ -3,8 +3,8 @@
 
 
 
-Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type = "other", 
-                  category.vars,  confounder=NULL, orders=NULL,
+Go_DA <- function(psIN,  project, order,type="taxonomy", filter, taxanames=NULL, data_type = "other", 
+                  cate.vars,  cate.conf=NULL, orders=NULL,
                   des=NULL, name=NULL, fdr=0.05){
 
   # out dir
@@ -32,7 +32,7 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
   
   # start
   res <- {}
-  for (mvar in category.vars) {
+  for (mvar in cate.vars) {
     if (length(unique(mapping[, mvar])) == 1) {
       next
     }
@@ -115,8 +115,8 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
       exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
     }
 
-    if (length(confounder) >= 1) {
-      form <-as.formula(sprintf("~ %s + %s", mvar, paste(setdiff(confounder, "SampleType"), collapse="+")))
+    if (length(cate.conf) >= 1) {
+      form <-as.formula(sprintf("~ %s + %s", mvar, paste(setdiff(cate.conf, "SampleType"), collapse="+")))
       print(form)
       dds = phyloseq_to_deseq2(psIN.cb, form)
     }    else {
@@ -135,9 +135,9 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
    
     
     #-- ANCOM-bc for phyloseq --#
-    if(!is.null(confounder)){
+    if(!is.null(cate.conf)){
       out <- ancombc(phyloseq = psIN.cb, p_adj_method = "holm", zero_cut = 0.90, lib_cut = 1000, 
-                     formula = sprintf("%s + %s", mvar, paste(setdiff(confounder, "SampleType"), collapse="+")), 
+                     formula = sprintf("%s + %s", mvar, paste(setdiff(cate.conf, "SampleType"), collapse="+")), 
                      group = mvar, struc_zero = TRUE, neg_lb = TRUE, tol = 1e-5, 
                      max_iter = 100, conserve = TRUE, alpha = 0.05, global = TRUE)
     }else{
@@ -159,7 +159,7 @@ Go_DA <- function(psIN,  project, order,type, filter, taxanames=NULL, data_type 
     colnames(res.ancom.df) <- gsub(mvar,"", colnames(res.ancom.df))
 
     
-    if(!is.null(confounder)){
+    if(!is.null(cate.conf)){
       names(res.ancom.df)[length(names(res.ancom.df))]<-"diff_abn" 
     }else{
       colnames(res.ancom.df)<-c("best","se","W","pval","qval","diff_abn")

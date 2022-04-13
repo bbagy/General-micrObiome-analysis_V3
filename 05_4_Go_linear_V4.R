@@ -6,7 +6,9 @@
 #' @export
 #' @examples
 
-Go_linear <- function(df, numeric.vars, project, outcomes, mycols, maingroup, orders, name=NULL, height, width, plotCols, plotRows){
+Go_linear <- function(df, cont.vars, project, outcomes, 
+                      mycols =NULL, maingroup=NULL, orders=NULL, name=NULL, 
+                      height, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
@@ -35,7 +37,7 @@ Go_linear <- function(df, numeric.vars, project, outcomes, mycols, maingroup, or
   
   # plot
   plotlist <- list()
-  for (mvar in numeric.vars) {
+  for (mvar in cont.vars) {
     if (!is.null(maingroup)){
       if (mvar == maingroup){
         next
@@ -62,7 +64,13 @@ Go_linear <- function(df, numeric.vars, project, outcomes, mycols, maingroup, or
       df.na[,maingroup][df.na[,maingroup]==""] <- "NA";df.na[,maingroup]
       df.na[,maingroup]<- as.factor(df.na[,maingroup]);df.na[,maingroup]
       df.na.na <- subset(df.na, df.na[,maingroup] != "NA");df.na.na[,maingroup]
-      df.na.na[,maingroup] <- factor(df.na.na[,maingroup], levels = orders)
+      
+      if (!is.null(orders)) {
+        df.na.na[,maingroup] <- factor(df.na.na[,maingroup], levels = orders)
+      }else{
+        df.na.na[,maingroup] <- factor(df.na.na[,maingroup])
+      }
+
     }
 
     
@@ -75,9 +83,12 @@ Go_linear <- function(df, numeric.vars, project, outcomes, mycols, maingroup, or
         next
       }
       
+      df.na[,outcomes[i]] <- as.numeric(df.na[,outcomes[i]])
+      
       print(outcomes[i])
       
       if (!is.null(maingroup)) {
+        df.na.na[,outcomes[i]] <- as.numeric(df.na.na[,outcomes[i]])
         p<- ggplot(df.na.na, aes_string(x=mvar, y=outcomes[i], group= maingroup, color=maingroup, linetype = maingroup))
           
       }else {
@@ -99,7 +110,7 @@ Go_linear <- function(df, numeric.vars, project, outcomes, mycols, maingroup, or
                                             stat(r.squared), stat(p.value))),
                         parse = TRUE, size = 3)
       
-      if(!is.null(mycol)){
+      if(!is.null(mycols)){
         p <- p + scale_color_manual(values = mycols)
       }else{
         p <- p

@@ -2,8 +2,16 @@
 #'
 
 
-Go_bdiv <- function(psIN, category.vars, project, orders, mycols=NULL,combination=NULL,
-distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NULL, name=NULL, height, width){
+Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
+                    plot="PCoA",
+                    ellipse="yes",
+                    mycols=NULL,
+                    combination=NULL,
+                    shapes = NULL, 
+                    ID = NULL,  
+                    facet=NULL, 
+                    name=NULL, 
+                    height, width){
     
   if(!is.null(dev.list())) dev.off()
    
@@ -26,13 +34,9 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
 
   
-  
-
-  
   plotlist <- list()
-  for (mvar in category.vars) {
+  for (mvar in cate.vars) {
     mapping <- data.frame(sample_data(psIN))
-
     mapping[,mvar] <- factor(mapping[,mvar])
 
     sample_data(psIN) <- mapping
@@ -56,8 +60,6 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
     
     if (!is.null(combination)){
       mapping[,mvar] <- factor(mapping[,mvar], levels = intersect(orders, mapping[,mvar]))
-      
-      
       group.cbn <- combn(x = levels(mapping[,mvar]), m = combination)
       
       #print(count(group.cbn))
@@ -121,7 +123,7 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
           mapping.sel.na.rem[,mvar] <- factor(mapping.sel.na.rem[,mvar])
           
           
-          ord_meths= plot # c("DCA", "CCA", "RDA", "DPCoA", "NMDS","PCoA")
+          ord_meths = plot # c("DCA", "CCA", "RDA", "DPCoA", "NMDS","PCoA")
           plist = llply(as.list(ord_meths), function(i, psIN.cbn.na, distance_metric){
             ordi = ordinate(psIN.cbn.na, method=i, distance=distance_metric)
             plot_ordination(psIN.cbn.na, ordi, type = "samples", color= mvar)
@@ -141,6 +143,22 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
           pdataframe[,facet] <- factor(pdataframe[,facet], levels = orders)
           
           pdataframe[,mvar] <- factor(pdataframe[,mvar], levels = orders)
+
+
+          # Add number of samples in the group
+          renamed_levels <- as.character(levels(pdataframe[,mvar]));renamed_levels
+          oldNames <- unique(pdataframe[,mvar]);oldNames
+          if (length(renamed_levels) == 0) {
+            renamed_levels <- oldNames
+          }
+          for (name in oldNames) {
+            total <- length(which(pdataframe[,mvar] == name));total
+            new_n <- paste(name, " (n=", total, ")", sep="");new_n
+            levels(pdataframe[[mvar]])[levels(pdataframe[[mvar]])== name] <- new_n
+            renamed_levels <- replace(renamed_levels, renamed_levels == name, new_n);renamed_levels
+          }
+    
+
           
           
           # Plots
@@ -150,10 +168,10 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
           if (!is.null(shapes)) {
             
             pdataframe[,shapes] <- factor(pdataframe[,shapes], levels = orders)
-            p = p +  geom_point(aes_string(shape=shapes), size=1.5, alpha = 3) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
+            p = p +  geom_point(aes_string(shape=shapes), size=1, alpha = 1) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
             
           }else{
-            p = p + geom_point(size=1.5, alpha = 3)+ ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
+            p = p + geom_point(size=1, alpha = 1)+ ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
           }
           
           p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
@@ -195,13 +213,72 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
             p = p
           }
           
+          
+          #===================================#
+          # Add permanova for two combination #
+          #===================================#
+          if(combination ==2){
+            set.seed(1)
+            distance <- Go_dist(psIN = psIN.cbn.na, project = project, distance_metrics = distance_metric)
+            
+            x <- as.dist(distance[[distance_metric]])
+            factors <-  mapping.sel.na.rem[,mvar]
+            
+            co <- combn(unique(as.character(mapping.sel.na.rem[,mvar])),2)
+            R2 <- c()
+            p.value <- c()
+            F.Model <- c()
+            pairs <- c()
+            SumsOfSqs <- c()
+            Df <- c()
+            
+            x1=as.matrix(x)[factors %in% unique(factors), factors %in% unique(factors)]
+            
+            # run
+            map.pair <- subset(mapping.sel.na.rem, mapping.sel.na.rem[,mvar] %in% unique(factors))
+            
+            # count to table
+            if (table(map.pair[,mvar])[1] <=2 | table(map.pair[,mvar])[2] <=2){
+              p=p
+              next
+            }
+            
+            form <- as.formula(sprintf("x1 ~ %s", mvar))
+            print(form)
+            
+            ad <- adonis2(form, data = map.pair, permutations=999, by="terms")# "terms"  "margin" NULL
+            
+            pairs <- c(paste(co[1],'vs',co[2]));pairs
+            Df <- c(Df,ad[1,1])
+            SumsOfSqs <- c(SumsOfSqs, ad[1,2])
+            R2 <- round(c(R2,ad[1,3]), digits=3)
+            F.Model <- c(F.Model,ad[1,4]);
+            p.value <- c(p.value,ad[1,5])
+            
+            pairw.res <- data.frame(pairs,Df,SumsOfSqs,R2,F.Model,p.value)
+            
+            class(pairw.res) <- c("pwadonis", "data.frame")
+            # end adonis end
+            tmp <- as.data.frame(pairw.res)
+            tmp$distance_metric <- distance_metric
+            tmp$padj <- p.adjust(tmp$p.value, method="bonferroni")
+            
+            
+            
+            
+            grob <- grobTree(textGrob(paste(distance_metric, "\nR2=",R2,"\nPERMANOVA p=",tmp$padj,sep=""), x=0.01,  y=0.15, hjust=0,
+                                      gp=gpar(fontsize=8))) #, fontface="italic"
+            p = p + annotation_custom(grob)
+          }
+          
+          
           #plotlist[[length(plotlist)+1]] <- p
           
           print(p)
           
         }
       }
-    }    else{
+    }  else{
       for(distance_metric in distance_metrics){
         # remove na
         mapping.sel <- data.frame(sample_data(psIN))
@@ -246,18 +323,30 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
         
         pdataframe[,mvar] <- factor(pdataframe[,mvar], levels = orders)
         
+        # Add number of samples in the group
+        renamed_levels <- as.character(levels(pdataframe[,mvar]));renamed_levels
+        oldNames <- unique(pdataframe[,mvar]);oldNames
+        if (length(renamed_levels) == 0) {
+          renamed_levels <- oldNames
+        }
+        for (name in oldNames) {
+          total <- length(which(pdataframe[,mvar] == name));total
+          new_n <- paste(name, " (n=", total, ")", sep="");new_n
+          levels(pdataframe[[mvar]])[levels(pdataframe[[mvar]])== name] <- new_n
+          renamed_levels <- replace(renamed_levels, renamed_levels == name, new_n);renamed_levels
+        }
+        
         
         # Plots
         p = ggplot(pdataframe, aes_string("Axis_1", "Axis_2", color=mvar))
         
         
         if (!is.null(shapes)) {
-          
           pdataframe[,shapes] <- factor(pdataframe[,shapes], levels = orders)
-          p = p +  geom_point(aes_string(shape=shapes), size=1.5, alpha = 3) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
+          p = p +  geom_point(aes_string(shape=shapes), size=1, alpha = 1) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
           
         }else{
-          p = p + geom_point(size=1.5, alpha = 3)+ ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
+          p = p + geom_point(size=1, alpha = 1)+ ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
         }
         
         p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
@@ -267,7 +356,7 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
                       legend.justification="left", 
                       legend.box = "vertical",
                       legend.box.margin = ggplot2::margin(0,0,0,-1,"cm"),
-                      plot.title=element_text(size=9,face="bold"))
+                      plot.title=element_text(size=8,face="bold"))
         
         if(!is.null(mycols)){
           p <- p + scale_color_manual(values = mycols)
@@ -289,10 +378,6 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
           p = p 
         }
         
-        
-        
-        
-        
         if (!is.null(facet)) {
           ncol <- length(unique(mapping.sel.na.rem[,facet]))
           p = p + facet_wrap(as.formula(sprintf("~ %s", facet)), scales="free_x", ncol = ncol)
@@ -300,7 +385,6 @@ distance_metrics, plot="PCoA", shapes = NULL, ID = NULL, ellipse="yes", facet=NU
         else {
           p = p
         }
-        
         #plotlist[[length(plotlist)+1]] <- p
         print(p)
       }

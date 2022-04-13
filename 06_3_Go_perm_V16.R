@@ -12,7 +12,7 @@
 #' Go_perm()
 
 
-Go_perm <- function(psIN, category.vars, project, distance, distance_metrics, confounder=NULL, des, name=NULL){
+Go_perm <- function(psIN, cate.vars, project, distance, distance_metrics, cate.conf=NULL, des, name=NULL){
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out)) dir.create(out)
@@ -37,7 +37,7 @@ Go_perm <- function(psIN, category.vars, project, distance, distance_metrics, co
   
   res.pair <-{}
   # Run
-  for (mvar in category.vars) {
+  for (mvar in cate.vars) {
     mapping.sel.na <- mapping.sel[!is.na(mapping.sel[,mvar]), ]
     if (length(unique(mapping.sel.na[,mvar])) == 1){
       cat(sprintf("there is no group campare to %s\n",unique(mapping.sel[,mvar])))
@@ -56,7 +56,7 @@ Go_perm <- function(psIN, category.vars, project, distance, distance_metrics, co
       
       
       # pairwise.adonis2
-      # pair.ado <- pairwise.adonis2(x=as.dist(distance[[distance_metric]]), factors = mapping.sel.na[,mvar], map=mapping.sel.na, confounder=adjust, mvar=mvar)
+      # pair.ado <- pairwise.adonis2(x=as.dist(distance[[distance_metric]]), factors = mapping.sel.na[,mvar], map=mapping.sel.na, cate.conf=adjust, mvar=mvar)
       
       x <- as.dist(distance[[distance_metric]])
       factors <-  mapping.sel.na[,mvar]
@@ -86,8 +86,8 @@ Go_perm <- function(psIN, category.vars, project, distance, distance_metrics, co
           next
         }
         
-        if (!is.null(confounder)) {
-          form <- as.formula(sprintf("x1 ~ %s + %s", mvar, paste(setdiff(confounder, "SampleType"), collapse="+")))
+        if (!is.null(cate.conf)) {
+          form <- as.formula(sprintf("x1 ~ %s + %s", mvar, paste(setdiff(cate.conf, "SampleType"), collapse="+")))
           print(form)
         }else{
           form <- as.formula(sprintf("x1 ~ %s", mvar))
@@ -111,7 +111,7 @@ Go_perm <- function(psIN, category.vars, project, distance, distance_metrics, co
       tmp <- as.data.frame(pairw.res)
       tmp$distance_metric <- distance_metric
       tmp$mvar <- mvar
-      tmp$adjusted <- paste(setdiff(confounder, "SampleType"), collapse="+")
+      tmp$adjusted <- paste(setdiff(cate.conf, "SampleType"), collapse="+")
       res.pair <- rbind(res.pair, tmp)
     }
   }
@@ -124,7 +124,7 @@ Go_perm <- function(psIN, category.vars, project, distance, distance_metrics, co
   # output
     write.csv(res.pair, quote = FALSE,col.names = NA, sprintf("%s/pair_permanova.%s.%s%s%s%s.csv", out_perm, 
               project, 
-              ifelse(is.null(confounder), "", paste(confounder, "adjusted.", sep = "")), 
+              ifelse(is.null(cate.conf), "", paste(cate.conf, "adjusted.", sep = "")), 
               ifelse(is.null(des), "", paste(des, ".", sep = "")), 
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 
               format(Sys.Date(), "%y%m%d")),sep="/")

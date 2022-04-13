@@ -40,10 +40,10 @@ Go_emptyMap <- function(psIN, project){
     }
   }
   
-  cat(sprintf("empty metadata is saved in %s.\n",map))
-  cat("                                                       \n")
-  write.csv(emptyMetadata, quote = FALSE, col.names = NA,  row.names = T,
-            file=sprintf("%s/emptyControlpanel.%s.%s.csv",map, project,format(Sys.Date(), "%y%m%d"),sep="/"))
+  #cat(sprintf("empty metadata is saved in %s.\n",map))
+  #cat("                                                       \n")
+  #write.csv(emptyMetadata, quote = FALSE, col.names = NA,  row.names = T,
+  #          file=sprintf("%s/emptyControlpanel.%s.%s.csv",map, project,format(Sys.Date(), "%y%m%d"),sep="/"))
 } 
 
 

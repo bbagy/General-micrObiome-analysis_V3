@@ -2,7 +2,7 @@
 #'
 
 
-Go_DA_plot <- function(project, file_path,files, type, plot = "volcano", fdr, fc,mycols=NULL, name, overlaps=10, font, height, width){
+Go_DA_plot <- function(project, file_path,files, type="taxonomy", plot = "volcano", fdr, fc, mycols=NULL, name, overlaps=10, font, height, width){
     
   if(!is.null(dev.list())) dev.off()
    
@@ -11,6 +11,8 @@ Go_DA_plot <- function(project, file_path,files, type, plot = "volcano", fdr, fc
   if(!file_test("-d", out)) dir.create(out)
   out_path <- file.path(sprintf("%s_%s/pdf",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_path)) dir.create(out_path)
+  out_DA <- file.path(sprintf("%s_%s/pdf/DA_plot",project, format(Sys.Date(), "%y%m%d"))) 
+  if(!file_test("-d", out_DA)) dir.create(out_DA)
   
   # add input files
   path <- file_path
@@ -25,16 +27,6 @@ Go_DA_plot <- function(project, file_path,files, type, plot = "volcano", fdr, fc
     name <- NULL
   }
   
-  pdf(sprintf("%s/DA.%s%s.%s(%s.%s).%s.pdf", out_path, 
-              ifelse(is.null(plot), "", paste(plot, ".", sep = "")), 
-              project, 
-              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
-              fdr, 
-              fc, 
-              format(Sys.Date(), "%y%m%d")), height = height, width = width)
-  
-
-
   for (fn in 1:length(filenames)) {
 
     df <- read.csv(sprintf("%s/%s",path, filenames[fn]), row.names=NULL ,check.names=FALSE,quote = "")
@@ -137,8 +129,20 @@ Go_DA_plot <- function(project, file_path,files, type, plot = "volcano", fdr, fc
     }else{
       p1 <- p1 + ggtitle(sprintf("%s, (padj < %s,cutoff=%s) ", mvar,  fdr, fc))
     }
-    print(p1)
-  } 
-  dev.off()
-}
 
+
+
+      pdf(sprintf("%s/%s%s.(%s.vs.%s).%s.%s(%s.%s).%s.pdf", out_DA, 
+              ifelse(is.null(plot), "", paste(plot, ".", sep = "")), 
+              mvar,
+              basline, 
+              smvar,
+              project, 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              fdr, 
+              fc, 
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
+    print(p1)
+     dev.off()
+  } 
+}

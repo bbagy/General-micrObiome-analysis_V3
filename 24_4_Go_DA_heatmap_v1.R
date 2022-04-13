@@ -1,6 +1,6 @@
 #' A Go_deseq2_heat
 #' 
-Go_DA_heat <- function(df, project, data_type, facet,groupby,font, alpha,beta, orders, name, height, width){
+Go_DA_heat <- function(df, project, data_type, facet,groupby,font, fdr,fc, orders, name, height, width){
     
   if(!is.null(dev.list())) dev.off()
    
@@ -19,22 +19,22 @@ Go_DA_heat <- function(df, project, data_type, facet,groupby,font, alpha,beta, o
               project, 
               ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 
-              alpha, 
-              beta, 
+              fdr, 
+              fc, 
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
   
   
-  resSig <- as.data.frame(subset(df, padj < alpha)); resSig <- resSig[order(resSig$log2FoldChange),]
+  resSig <- as.data.frame(subset(df, padj < fdr)); resSig <- resSig[order(resSig$log2FoldChange),]
   
   
   if (length(subset(resSig, ancom == TRUE)) > 1){
     print(sprintf("Combination Deseq2(%s) and Ancom(%s)",length(resSig$deseq2),length(subset(resSig, ancom == TRUE))))
-    resSig.top <- as.data.frame(subset(resSig, abs(resSig$log2FoldChange) > beta))
+    resSig.top <- as.data.frame(subset(resSig, abs(resSig$log2FoldChange) > fc))
     resSig.top <- subset(resSig.top, ancom == TRUE)
     
   } else{
     print(sprintf("Use only Deseq2(%s)",length(resSig.top$deseq2)))
-    resSig.top <- as.data.frame(subset(resSig, abs(resSig$log2FoldChange) > beta))
+    resSig.top <- as.data.frame(subset(resSig, abs(resSig$log2FoldChange) > fc))
   }
   
   #print("c")
@@ -68,19 +68,24 @@ Go_DA_heat <- function(df, project, data_type, facet,groupby,font, alpha,beta, o
       }
     }
     
+
+
+    resSig.top$basline <- paste(resSig.top$basline," (n=",resSig.top$bas.count, ")",sep="")
+    resSig.top$smvar <- paste(resSig.top$smvar," (n=", resSig.top$smvar.count, ")",sep="")
+
     print(1)
     if (groupby == "smvar"){
       p <- ggplot(resSig.top, aes(x=reorder(taxa,log2FoldChange), y=smvar, color=smvar)) + theme_classic()+ coord_flip() #x=reorder(taxa,Estimate); 원래 x=factor(taxa). 값에 따라 정열 하기 위해x=reorder(taxa,Estimate)를 사용함
  
     }  else {
-      p <- ggplot(resSig.top, aes(x=reorder(taxa,log2FoldChange), y=smvar, color=smvar)) + theme_classic()+ coord_flip()#x=reorder(taxa,Estimate); 원래 x=factor(taxa). 값에 따라 정열 하기 위해x=reorder(taxa,Estimate)를 사용함
+      p <- ggplot(resSig.top, aes(x=reorder(taxa,log2FoldChange), y=mvar, color=mvar)) + theme_classic()+ coord_flip()#x=reorder(taxa,Estimate); 원래 x=factor(taxa). 값에 따라 정열 하기 위해x=reorder(taxa,Estimate)를 사용함
     }
-    
+
     
     p = p + geom_tile(aes(fill = log2FoldChange), colour = "white") + 
       labs(y = "Comparison Group") +labs(x = NULL) +
       scale_fill_gradient2(low = "#1170aa", mid = "white", high = "#fc7d0b")+
-      ggtitle(sprintf("%s baseline %s vs %s (padj < %s, cutoff=%s) ", unique(resSig$mvar), unique(resSig$basline), "All groups",  alpha,beta))  + 
+      ggtitle(sprintf("%s baseline %s vs %s (padj < %s, cutoff=%s) ", unique(resSig$mvar), unique(resSig$basline), "All groups",  fdr,fc))  + 
       theme(plot.title = element_text(hjust = 0.5),legend.position= "right")+ #0.5
       theme(axis.text.x = element_text(angle=0, vjust=0.5, hjust=1, size=8),
              axis.text.y = element_text(angle=0, vjust=0.5, hjust=1, size=8,face = "italic"),

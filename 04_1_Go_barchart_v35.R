@@ -8,7 +8,7 @@
 #' Go_barchart()
 
 
-Go_barchart <- function(psIN, category.vars, project, taxanames, orders,
+Go_barchart <- function(psIN, cate.vars, project, taxanames, orders,
                         simple = FALSE,  
                         mycols=NULL, 
                         relative = T,
@@ -118,8 +118,12 @@ if(relative == T){
       agg[,taxanames[i]] <- genera
       #saving table
       agg_other_out <- subset(agg, agg[,taxanames[i]] != "[1_#Other]")
-      write.csv(agg_other_out, quote = FALSE, col.names = NA, file=sprintf("%s/%s.taxa_relative_abundance.(%s).%s.%s.csv", out_taxa,
-                                                                           project,cutoff,taxanames[i],format(Sys.Date(),"%y%m%d"))) #,sep="/"
+      write.csv(agg_other_out, quote = FALSE, col.names = NA, file=sprintf("%s/%s.taxa_relative_abundance.(%s).%s.%s%s.csv", out_taxa,
+                                                                           project,cutoff,taxanames[i],
+                                                                           ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+                                                                           format(Sys.Date(),"%y%m%d"))) #,sep="/"
+
+
       df <- melt(agg, variable="SampleID")
     }else if(relative == FALSE){
       genera <- agg[,taxanames[i]]
@@ -130,8 +134,10 @@ if(relative == T){
       agg[,taxanames[i]] <- genera
       #saving table
       agg_other_out <- subset(agg, agg[,taxanames[i]] != "[1_#Other]")
-      write.csv(agg_other_out, quote = FALSE, col.names = NA, file=sprintf("%s/%s.taxa_absolute_abundance.(%s).%s.%s.csv", out_taxa,
-                                                                           project,cutoff,taxanames[i],format(Sys.Date(),"%y%m%d"))) #,sep="/"
+      write.csv(agg_other_out, quote = FALSE, col.names = NA, file=sprintf("%s/%s.taxa_absolute_abundance.(%s).%s.%s%s.csv", out_taxa,
+                                                                           project,cutoff,taxanames[i],
+                                                                           ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+                                                                           format(Sys.Date(),"%y%m%d"))) #,sep="/"
       df <- melt(agg, variable="SampleID")
     }
     
@@ -149,7 +155,7 @@ if(relative == T){
     #mapping.sel[df2$SampleID, "StudyID"]
    
     # add groups
-    for (mvar in category.vars) {
+    for (mvar in cate.vars) {
       df.SampleIDstr$Group <- as.character(mapping.sel[df.SampleIDstr$SampleID, mvar])
       df2[,mvar] <- mapping.sel[df2$SampleID, mvar]
 
@@ -245,7 +251,7 @@ if(relative == T){
     
     
     if (!is.null(facet)) {
-      for (mvar in category.vars) {        
+      for (mvar in cate.vars) {        
         if (facet == mvar) {
           next
         }
@@ -275,7 +281,7 @@ if(relative == T){
       }
 
     }     else if (is.null(facet) & simple == FALSE) {
-      for (mvar in category.vars) {
+      for (mvar in cate.vars) {
         print("B")
         print(sprintf("Facet by %s",mvar))
 
@@ -296,7 +302,7 @@ if(relative == T){
         print(p)
       }
     } else if (is.null(facet) & simple == TRUE) {
-      for (mvar in category.vars) {
+      for (mvar in cate.vars) {
 
         print("C")
         print("Simpe plot")
