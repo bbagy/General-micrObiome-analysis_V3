@@ -1,12 +1,14 @@
 
-Go_myCols <- function(custumCols, presetCols) {
+Go_myCols <- function(custumCols=NULL, RColorBrewer=NULL, piratepal=NULL) {
   # reset colors
   # rm(list = ls()[grep("mycols", ls())])
   
   if(!is.null(dev.list())) dev.off()
+# https://bookdown.org/ndphillips/YaRrr/more-colors.html
 
+library("yarrr")
   # for custom
-  if(is.null(custumCols) & is.null(presetCols)){
+  if(is.null(custumCols) & is.null(RColorBrewer) & is.null(piratepal)){
     
     cat("#=== Please select your colors. If not, basic color would be used. ===#","\n","\n", sep=" ")
     
@@ -14,12 +16,11 @@ Go_myCols <- function(custumCols, presetCols) {
     cols2 <- c("#CBD588", "#5F7FC7", "orange","#DA5724", "#508578", "#CD9BCD", "#AD6F3B", "#673770","#D14285", "#652926", "#C84248", "#8569D5", "#5E738F","#D1A33D", "#8A7C64", "#599861")
     
     cat("Custum Colors1: cols1","\n", cols1, "\n","\n", sep=" ")
-    cat("Custum Colors1: cols2","\n", cols2, "\n","\n", sep=" ")
+    cat("Custum Colors2: cols2","\n", cols2, "\n","\n", sep=" ")
 
-    cat("Preset Colors:","\n", "Set3     Set2    Set1   Pastel2", "\n", "Pastel1  Paired  Dark2  Accent", "\n", sep=" ")
-    
-    display.brewer.all(type = "qual")
-    
+    cat("RColorBrewer:","\n", "Set3     Set2    Set1   Pastel2", "\n", "Pastel1  Paired  Dark2  Accent", "\n","\n", sep=" ")
+    cat("piratepal:","\n", "basel    pony    Xmen    decision    southpark", "\n", "google   eternal   evildead    usualsjspects   ohbrother", 
+    "\n", "appletv    brave    bugs    cars    nemo", "\n", "rat    up    espresso    ipod   info    info2","\n",sep=" ")
   }
   
   if(!is.null(custumCols)){
@@ -35,58 +36,92 @@ Go_myCols <- function(custumCols, presetCols) {
       barplot(rep(1,length(cols2)), col=cols2, main= custumCols,yaxt="n")
       return(mycols)
     }
-  } 
-
-
-
-
-
-
-    
-  # for preset colors
-  if(is.null(custumCols) & !is.null(presetCols)){
-    if(presetCols == "Set1"){
-      mycols <- brewer.pal(9, presetCols)
-      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
-      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
-      return(mycols)
-    }else if(presetCols == "Set2"){
-      mycols <- brewer.pal(8, presetCols)
-      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
-      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
-      return(mycols)
-    }else if(presetCols == "Set3"){
-      mycols <- brewer.pal(12, presetCols)
-      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
-      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
-      return(mycols)
-    }else if(presetCols == "Pastel2"){
-      mycols <- brewer.pal(8, presetCols)
-      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
-      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
-      return(mycols)
-    }else if(presetCols == "Pastel1"){
-      mycols <- brewer.pal(9, presetCols)
-      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
-      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
-      return(mycols)
-    }else if(presetCols == "Paired"){
-      mycols <- brewer.pal(12, presetCols)
-      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
-      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
-      return(mycols)
-    }else if(presetCols == "Dark2"){
-      mycols <- brewer.pal(8, presetCols)
-      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
-      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
-      return(mycols)
-    }else if(presetCols == "Accent"){
-      mycols <- brewer.pal(8, presetCols)
-      barplot(rep(1,length(mycols)), col=mycols, main= presetCols,yaxt="n")
-      cat(sprintf("mycols was set as [%s].\n.\n",presetCols))
-      return(mycols)
-    }
   } else{
     display.brewer.all(type = "qual")
+    piratepal("all")
+  }
+    
+  # for RColorBrewer
+  if(!is.null(RColorBrewer)){
+    if(RColorBrewer == "Set1"){
+      mycols <- brewer.pal(9, RColorBrewer)
+    }else if(RColorBrewer == "Set2"){
+      mycols <- brewer.pal(8, RColorBrewer)
+    }else if(RColorBrewer == "Set3"){
+      mycols <- brewer.pal(12, RColorBrewer)
+    }else if(RColorBrewer == "Pastel2"){
+      mycols <- brewer.pal(8, RColorBrewer)
+    }else if(RColorBrewer == "Pastel1"){
+      mycols <- brewer.pal(9, RColorBrewer)
+    }else if(RColorBrewer == "Paired"){
+      mycols <- brewer.pal(12, RColorBrewer)
+    }else if(RColorBrewer == "Dark2"){
+      mycols <- brewer.pal(8, RColorBrewer)
+    }else if(RColorBrewer == "Accent"){
+      mycols <- brewer.pal(8, RColorBrewer)
+    }
+  barplot(rep(1,length(mycols)), col=mycols, main= RColorBrewer,yaxt="n")
+  cat(sprintf("mycols was set as [%s].\n.\n",RColorBrewer))
+  return(mycols)
+  }  else{
+    display.brewer.all(type = "qual")
+    piratepal("all")
+  }
+  
+  
+  # for piratepal
+  if(!is.null(piratepal)){ 
+    if(piratepal == "basel"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal == "pony"){
+      mmycols <- piratepal(palette =piratepal)
+    }else if(piratepal == "Xmen"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal == "decision"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal == "southpark"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal == "google"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal == "eternal"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal== "evildead"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal== "usualsjspects"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal== "ohbrother"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal== "appletv"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal== "brave"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal== "bugs"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal== "cars"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal== "nemo"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal== "rat"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal== "up"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal== "espresso"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal== "ipod"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal== "info"){
+      mycols <- piratepal(palette =piratepal)
+    }else if(piratepal== "info2"){
+      mycols <- piratepal(palette =piratepal)
+    }
+
+  cols <- as.data.frame(mycols)
+  mycols <- cols$mycols
+  barplot(rep(1,length(mycols)), col=mycols, main= piratepal,yaxt="n")
+  cat(sprintf("mycols was set as [%s].\n.\n",piratepal))
+  return(mycols)
+  }  else{
+    display.brewer.all(type = "qual")
+    piratepal("all")
   }
 }

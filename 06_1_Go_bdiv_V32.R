@@ -3,6 +3,7 @@
 
 
 Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
+                    cate.conf=NULL,
                     plot="PCoA",
                     ellipse="yes",
                     mycols=NULL,
@@ -21,15 +22,29 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
   out_path <- file.path(sprintf("%s_%s/pdf",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_path)) dir.create(out_path)
 
- # out file
-   # "name" definition
+  # out file
+  # "name" definition
   if (class(name) == "function"){
     name <- NULL
   }
-  pdf(sprintf("%s/ordi.%s.%s%s%s%s.pdf", out_path, 
+  
+  tt <- try(mycols,T)
+  if(class(tt) == "try-error"){
+    print("mycols is not defined.")
+    mycols <- NULL
+  }
+
+  tt <- try(orders,T)
+  if(class(tt) == "try-error"){
+    print("orders is not defined.")
+    orders <- NULL
+  }
+  
+  pdf(sprintf("%s/ordi.%s.%s%s%s%s%s.pdf", out_path, 
               project, 
               ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
               ifelse(is.null(combination), "", paste("(cbn=",combination, ").", sep = "")), 
+              ifelse(is.null(cate.conf), "", paste("with_confounder", ".", sep = "")), 
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
 
@@ -63,8 +78,6 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
       group.cbn <- combn(x = levels(mapping[,mvar]), m = combination)
       
       #print(count(group.cbn))
-      
-      
       
       group_comparisons <- {}
       for(i in 1:ncol(group.cbn)){
@@ -159,8 +172,6 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
           }
     
 
-          
-          
           # Plots
           p = ggplot(pdataframe, aes_string("Axis_1", "Axis_2", color=mvar))
           
@@ -189,8 +200,6 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
             p <- p
           }
           
-          
-          
           # ID variation
           if (!is.null(ID)) {
             p = p + geom_text_repel(aes_string(label = ID), size = 2)
@@ -217,59 +226,60 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
           #===================================#
           # Add permanova for two combination #
           #===================================#
-          if(combination ==2){
-            set.seed(1)
-            distance <- Go_dist(psIN = psIN.cbn.na, project = project, distance_metrics = distance_metric)
-            
-            x <- as.dist(distance[[distance_metric]])
-            factors <-  mapping.sel.na.rem[,mvar]
-            
-            co <- combn(unique(as.character(mapping.sel.na.rem[,mvar])),2)
-            R2 <- c()
-            p.value <- c()
-            F.Model <- c()
-            pairs <- c()
-            SumsOfSqs <- c()
-            Df <- c()
-            
-            x1=as.matrix(x)[factors %in% unique(factors), factors %in% unique(factors)]
-            
-            # run
-            map.pair <- subset(mapping.sel.na.rem, mapping.sel.na.rem[,mvar] %in% unique(factors))
-            
-            # count to table
-            if (table(map.pair[,mvar])[1] <=2 | table(map.pair[,mvar])[2] <=2){
-              p=p
-              next
+          set.seed(1)
+          distance <- Go_dist(psIN = psIN.cbn.na, project = project, distance_metrics = distance_metric)
+          
+          x <- as.dist(distance[[distance_metric]])
+          factors <-  mapping.sel.na.rem[,mvar]
+          
+          R2 <- c()
+          p.value <- c()
+          F.Model <- c()
+          pairs <- c()
+          SumsOfSqs <- c()
+          Df <- c()
+          
+          x1=as.matrix(x)[factors %in% unique(factors), factors %in% unique(factors)]
+          
+          # run
+          map.pair <- subset(mapping.sel.na.rem, mapping.sel.na.rem[,mvar] %in% unique(factors))
+          
+          # count to table
+          if (table(map.pair[,mvar])[1] <=2 | table(map.pair[,mvar])[2] <=2){
+            p=p
+            next
+          }
+          
+          if (!is.null(cate.conf)) {
+            for(conf in cate.conf){
+              map.pair[,conf] <- factor(map.pair[,conf])
             }
-            
+            form <- as.formula(sprintf("x1 ~ %s + %s", mvar, paste(setdiff(cate.conf, "SampleType"), collapse="+")))
+            print(form)
+          }else{
             form <- as.formula(sprintf("x1 ~ %s", mvar))
             print(form)
-            
-            ad <- adonis2(form, data = map.pair, permutations=999, by="terms")# "terms"  "margin" NULL
-            
-            pairs <- c(paste(co[1],'vs',co[2]));pairs
-            Df <- c(Df,ad[1,1])
-            SumsOfSqs <- c(SumsOfSqs, ad[1,2])
-            R2 <- round(c(R2,ad[1,3]), digits=3)
-            F.Model <- c(F.Model,ad[1,4]);
-            p.value <- c(p.value,ad[1,5])
-            
-            pairw.res <- data.frame(pairs,Df,SumsOfSqs,R2,F.Model,p.value)
-            
-            class(pairw.res) <- c("pwadonis", "data.frame")
-            # end adonis end
-            tmp <- as.data.frame(pairw.res)
-            tmp$distance_metric <- distance_metric
-            tmp$padj <- p.adjust(tmp$p.value, method="bonferroni")
-            
-            
-            
-            
-            grob <- grobTree(textGrob(paste(distance_metric, "\nR2=",R2,"\nPERMANOVA p=",tmp$padj,sep=""), x=0.01,  y=0.15, hjust=0,
-                                      gp=gpar(fontsize=8))) #, fontface="italic"
-            p = p + annotation_custom(grob)
           }
+          
+          ad <- adonis2(form, data = map.pair, permutations=999, by="terms")# "terms"  "margin" NULL
+          
+          Df <- c(Df,ad[1,1])
+          SumsOfSqs <- c(SumsOfSqs, ad[1,2])
+          R2 <- round(c(R2,ad[1,3]), digits=3)
+          F.Model <- c(F.Model,ad[1,4]);
+          p.value <- c(p.value,ad[1,5])
+          
+          pairw.res <- data.frame(Df,SumsOfSqs,R2,F.Model,p.value)
+          
+          class(pairw.res) <- c("pwadonis", "data.frame")
+          # end adonis end
+          tmp <- as.data.frame(pairw.res)
+          tmp$distance_metric <- distance_metric
+          tmp$padj <- p.adjust(tmp$p.value, method="bonferroni")
+          
+          grob <- grobTree(textGrob(paste(distance_metric, "\nR2=",R2,"\nPERMANOVA p=",tmp$padj,sep=""), x=0.01,  y=0.15, hjust=0,
+                                    gp=gpar(fontsize=8))) #, fontface="italic"
+          p = p + annotation_custom(grob)
           
           
           #plotlist[[length(plotlist)+1]] <- p
@@ -366,25 +376,84 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
         
         # ID variation
         if (!is.null(ID)) {
-          p = p + geom_text_repel(aes_string(label = ID), size = 2)
+          p <- p + geom_text_repel(aes_string(label = ID), size = 2)
         } else {
-          p = p 
+          p <- p 
         }
         
         # ellipse variation
         if (ellipse == "yes" | ellipse == "Yes" ) {
-          p = p + stat_ellipse(type = "norm", linetype = 2) 
+          p <- p + stat_ellipse(type = "norm", linetype = 2) 
         } else if (ellipse == "no" | ellipse == "No" ){
-          p = p 
+          p <- p 
         }
         
         if (!is.null(facet)) {
           ncol <- length(unique(mapping.sel.na.rem[,facet]))
-          p = p + facet_wrap(as.formula(sprintf("~ %s", facet)), scales="free_x", ncol = ncol)
+          p <- p + facet_wrap(as.formula(sprintf("~ %s", facet)), scales="free_x", ncol = ncol)
         }
         else {
-          p = p
+          p <- p
         }
+        
+        #===================================#
+        # Add permanova for two combination #
+        #===================================#
+        set.seed(1)
+        distance <- Go_dist(psIN = psIN.na, project = project, distance_metrics = distance_metric)
+        
+        x <- as.dist(distance[[distance_metric]])
+        factors <-  mapping.sel.na.rem[,mvar]
+        
+        R2 <- c()
+        p.value <- c()
+        F.Model <- c()
+        pairs <- c()
+        SumsOfSqs <- c()
+        Df <- c()
+        
+        x1=as.matrix(x)[factors %in% unique(factors), factors %in% unique(factors)]
+        
+        # run
+        map.pair <- subset(mapping.sel.na.rem, mapping.sel.na.rem[,mvar] %in% unique(factors))
+        
+        # count to table
+        if (table(map.pair[,mvar])[1] <=2 | table(map.pair[,mvar])[2] <=2){
+          p  <-  p
+          next
+        }
+        
+        
+        if (!is.null(cate.conf)) {
+          for(conf in cate.conf){
+            map.pair[,conf] <- factor(map.pair[,conf])
+          }
+          form <- as.formula(sprintf("x1 ~ %s + %s", mvar, paste(setdiff(cate.conf, "SampleType"), collapse="+")))
+          print(form)
+        }else{
+          form <- as.formula(sprintf("x1 ~ %s", mvar))
+          print(form)
+        }
+        
+        ad <- adonis2(form, data = map.pair, permutations=999, by="terms")# "terms"  "margin" NULL
+        
+        Df <- c(Df,ad[1,1])
+        SumsOfSqs <- c(SumsOfSqs, ad[1,2])
+        R2 <- round(c(R2,ad[1,3]), digits=3)
+        F.Model <- c(F.Model,ad[1,4]);
+        p.value <- c(p.value,ad[1,5])
+        
+        pairw.res <- data.frame(Df,SumsOfSqs,R2,F.Model,p.value)
+        
+        class(pairw.res) <- c("pwadonis", "data.frame")
+        # end adonis end
+        tmp <- as.data.frame(pairw.res)
+        tmp$distance_metric <- distance_metric
+        tmp$padj <- p.adjust(tmp$p.value, method="bonferroni")
+        
+        grob <- grobTree(textGrob(paste(distance_metric, "\nR2=",R2,"\nPERMANOVA p=",tmp$padj,sep=""), x=0.01,  y=0.15, hjust=0,
+                                  gp=gpar(fontsize=8))) #, fontface="italic"
+        p = p + annotation_custom(grob)
         #plotlist[[length(plotlist)+1]] <- p
         print(p)
       }

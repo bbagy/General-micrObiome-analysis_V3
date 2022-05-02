@@ -1,6 +1,7 @@
 
 
-Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NULL,Ntax=NULL, name=NULL,
+Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NULL,group4=NULL,
+                        Ntax=NULL, name=NULL,
                         show_rownames = T,show_colnames = F,type,showPhylum = T,
                         cutree_rows = NA, cutree_cols = NA,
                         cluster_rows = T,cluster_cols = T, 
@@ -105,7 +106,7 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NUL
   if(type == "taxonomy" | type == "taxanomy" ){
     colnames(annotation_row) <- c("Phylum")
     
-    getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
+    getPalette = colorRampPalette(brewer.pal(8, "Paired"))
     phylum_col <- getPalette(length(unique(annotation_row$Phylum)))
     
     #phylum_col <- head(brewer.pal(8, "Dark2"),length(unique(annotation_row$Phylum)))
@@ -114,7 +115,7 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NUL
   } else if(type == "function"){
     colnames(annotation_row) <- c("Path")
     
-    getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
+    getPalette = colorRampPalette(brewer.pal(8, "Paired"))
     Path_col <- getPalette(length(unique(annotation_row$Path)))
     names(Path_col) = levels(annotation_row$Path)
   }
@@ -139,7 +140,7 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NUL
   if (!is.null(group2) & is.null(group3)){
     annotation_col = data.frame(
       group1 = as.factor(mapping.sel[,group1]), 
-      group2 = as.factor(mapping.sel[,group2]), 
+      group2 = as.factor(mapping.sel[,group2])
     ) 
     
     colnames(annotation_col) <-c(group1, group2)
@@ -147,20 +148,18 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NUL
     # group colors
     
     if (length(unique(mapping.sel[,group1])) > 8){
-      getPalette = colorRampPalette(brewer.pal(8, "Set2"))
+      getPalette = colorRampPalette(brewer.pal(9, "Set1"))
       group1.col <- getPalette(length(unique(mapping.sel[,group1])))
       names(Path_col) = levels(annotation_row$Path)
       print(1)
     } else{
-      group1.col <- head(brewer.pal(8, "Set2"),length(unique(mapping.sel[,group1])))
+      group1.col <- head(brewer.pal(9, "Set1"),length(unique(mapping.sel[,group1])))
       names(group1.col) = levels(as.factor(mapping.sel[,group1]))
       print(2)
     }
     
     
-    
-    
-    group2.col <- head(brewer.pal(8, "Accent"),length(unique(mapping.sel[,group2])))
+    group2.col <- head(brewer.pal(8, "Dark2"),length(unique(mapping.sel[,group2])))
     names(group2.col) <- unique(mapping.sel[,group2])
     
     # color list
@@ -180,32 +179,32 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NUL
       names(ann_colors) <-c(group1, group2,"Path")
     }
     
-  } else if (!is.null(group2) & !is.null(group3)){
+  } else if (!is.null(group2) & !is.null(group3) & is.null(group4)){
     annotation_col = data.frame(
       group1 = as.factor(mapping.sel[,group1]), 
       group2 = as.factor(mapping.sel[,group2]), 
       group3 = as.factor(mapping.sel[,group3])
     )
     
-    colnames(annotation_col) <-c(group1, group2,group3)
+    colnames(annotation_col) <-c(group1, group2, group3)
     
     # group colors
     
     if (length(unique(mapping.sel[,group1])) > 8){
-      getPalette = colorRampPalette(brewer.pal(8, "Set2"))
+      getPalette = colorRampPalette(brewer.pal(9, "Set1"))
       group1.col <- getPalette(length(unique(mapping.sel[,group1])))
       names(Path_col) = levels(annotation_row$Path)
       print(1)
     } else{
-      group1.col <- head(brewer.pal(8, "Set2"),length(unique(mapping.sel[,group1])))
+      group1.col <- head(brewer.pal(9, "Set1"),length(unique(mapping.sel[,group1])))
       names(group1.col) = levels(as.factor(mapping.sel[,group1]))
       print(2)
     }
     
-    group2.col <- head(brewer.pal(8, "Accent"),length(unique(mapping.sel[,group2])))
+    group2.col <- head(brewer.pal(8, "Dark2"),length(unique(mapping.sel[,group2])))
     names(group2.col) <- unique(mapping.sel[,group2])
     
-    group3.col <- head(brewer.pal(8, "Dark2"),length(unique(mapping.sel[,group3])))
+    group3.col <- head(rev(brewer.pal(12, "Paired")),length(unique(mapping.sel[,group3])))
     names(group3.col) <- unique(mapping.sel[,group3])
     
     # color list
@@ -226,6 +225,58 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NUL
       )
       names(ann_colors) <-c(group1, group2,group3,"Path")
     }
+  } else if (!is.null(group2) & !is.null(group3) & !is.null(group4)){
+    annotation_col = data.frame(
+      group1 = as.factor(mapping.sel[,group1]), 
+      group2 = as.factor(mapping.sel[,group2]), 
+      group3 = as.factor(mapping.sel[,group3]),
+      group4 = as.factor(mapping.sel[,group4])
+    )
+    
+    colnames(annotation_col) <-c(group1, group2, group3,group4)
+    
+    # group colors
+    
+    if (length(unique(mapping.sel[,group1])) > 8){
+      getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+      group1.col <- getPalette(length(unique(mapping.sel[,group1])))
+      names(Path_col) = levels(annotation_row$Path)
+      print(1)
+    } else{
+      group1.col <- head(brewer.pal(9, "Set1"),length(unique(mapping.sel[,group1])))
+      names(group1.col) = levels(as.factor(mapping.sel[,group1]))
+      print(2)
+    }
+    
+    group2.col <- head(brewer.pal(8, "Dark2"),length(unique(mapping.sel[,group2])))
+    names(group2.col) <- unique(mapping.sel[,group2])
+    
+    group3.col <- head(rev(brewer.pal(12, "Paired")),length(unique(mapping.sel[,group3])))
+    names(group3.col) <- unique(mapping.sel[,group3])
+    
+    group4.col <- head(rev(brewer.pal(8, "Dark2")),length(unique(mapping.sel[,group4])))
+    names(group4.col) <- unique(mapping.sel[,group4])
+    
+    # color list
+    if(type == "taxonomy" | type == "taxanomy" ){
+      ann_colors = list(
+        group1 = group1.col,
+        group2 = group2.col,
+        group3 = group3.col,
+        group4 = group4.col,
+        Phylum = phylum_col
+      )
+      names(ann_colors) <-c(group1, group2,group3,group4, "Phylum")
+    }else if(type == "function"){
+      ann_colors = list(
+        group1 = group1.col,
+        group2 = group2.col,
+        group3 = group3.col,
+        group4 = group4.col,
+        Path = Path_col
+      )
+      names(ann_colors) <-c(group1, group2,group3,group4,"Path")
+    }
   } else{
     annotation_col = data.frame(
       group1 = as.factor(mapping.sel[,group1]),
@@ -236,12 +287,12 @@ Go_pheatmap <- function(psIN,project, title, group1=NULL, group2=NULL,group3=NUL
     # group colors
     
     if (length(unique(mapping.sel[,group1])) > 8){
-      getPalette = colorRampPalette(brewer.pal(8, "Set2"))
+      getPalette = colorRampPalette(brewer.pal(9, "Set1"))
       group1.col <- getPalette(length(unique(mapping.sel[,group1])))
       names(Path_col) = levels(annotation_row$Path)
       print(3)
     } else{
-      group1.col <- head(brewer.pal(8, "Set2"),length(unique(mapping.sel[,group1])))
+      group1.col <- head(brewer.pal(9, "Set1"),length(unique(mapping.sel[,group1])))
       names(group1.col) = levels(as.factor(mapping.sel[,group1]))
       print(4)
     }

@@ -10,6 +10,7 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
                        facet= NULL, 
                        paired=NULL, 
                        name= NULL, 
+                       addnumber=TRUE,
                        statistics = "yes", 
                        parametric= "no", 
                        star="no",
@@ -31,6 +32,20 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
   if (class(name) == "function"){
     name <- NULL
   }
+  
+  tt <- try(mycols,T)
+  if(class(tt) == "try-error"){
+    print("mycols is not defined.")
+    mycols <- NULL
+  }
+  
+  tt <- try(orders,T)
+  if(class(tt) == "try-error"){
+    print("orders is not defined.")
+    orders <- NULL
+  }
+  
+  
   pdf(sprintf("%s/box.%s.%s%s%s%s.pdf", out_path, 
               project, 
               ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
@@ -62,9 +77,8 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
     df.na[,mvar] <- factor(df.na[,mvar], levels = intersect(orders, df.na[,mvar]))
     
     
-    
-    
     # Add number of samples in the group
+    if(addnumber==TRUE){
     renamed_levels <- as.character(levels(df.na[,mvar]));renamed_levels
     oldNames <- unique(df.na[,mvar]);oldNames
     if (length(renamed_levels) == 0) {
@@ -76,6 +90,10 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
       levels(df.na[[mvar]])[levels(df.na[[mvar]])== name] <- new_n
       renamed_levels <- replace(renamed_levels, renamed_levels == name, new_n);renamed_levels
     }
+    }else{
+      df.na <- df.na
+    }
+
     
     
     print(sprintf("##-- %s (total without NA: %s/%s) --##", 
@@ -156,18 +174,8 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
         
         
         
-        # check statistics method
+       
         for(oc in outcomes){
-          if (statistics == "yes"| statistics == "YES"|statistics == "Yes"){
-            if (parametric == "yes"| parametric == "YES"|parametric == "Yes"){
-              testmethod <- "t.test"
-            }else{
-              testmethod <- "wilcox.test"
-            }
-          } 
-          
-          
-          
           # remove NA for facet
           if (length(facet) >= 1) {
             for (fc in facet){
@@ -179,7 +187,34 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
               df.cbn[,fc] <- factor(df.cbn[,fc], levels = orders)
             }
           }
-          
+
+           # check statistics method
+          if (statistics == "yes"| statistics == "YES"|statistics == "Yes"){
+            if (parametric == "yes"| parametric == "YES"|parametric == "Yes"){
+              if (nlevels(factor(df.cbn[,mvar])) > 2) {
+                test <- aov(as.formula(sprintf("%s ~ %s", oc, mvar)), df.cbn)
+                pval <- round(summary(test)[[1]][["Pr(>F)"]][1],4)
+                test.name <- "ANOVA"
+                testmethod <-  "t.test"
+              } else {
+                testmethod <-  "t.test"
+                pval <- NULL
+                test.name <- "Pairwise T-Test"
+              }
+            }else{
+              if (nlevels(factor(df.cbn[,mvar])) > 2) {
+                test <- kruskal.test(as.formula(sprintf("%s ~ %s", oc, mvar)), df.cbn)
+                pval <- round(test$p.value, 4)
+                test.name <- "KW"
+                testmethod <- "wilcox.test"
+              } else {
+                testmethod <- "wilcox.test" 
+                pval <- NULL
+                test.name <- "Pairwise Wilcoxon"
+              }
+            } 
+          }
+
   
           p1 <- ggplot(df.cbn, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
             theme_bw() + theme(strip.background = element_blank()) +
@@ -195,20 +230,45 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
           
         
           if (!is.null(title)) {
-            p1 <- p1 + ggtitle(title)
+            p1 <- p1 + ggtitle(sprintf("%s%s%s%s", title,
+                                       ifelse(is.null(test.name), "", paste("\n",test.name, " ", sep = "")), 
+                                       ifelse(is.null(pval), "", paste("p=", " ", sep = "")), 
+                                       ifelse(is.null(pval), "", paste(pval, " ", sep = "")), sep=""))
           } else{
-            p1 <- p1 + ggtitle(sprintf("%s", mvar))
+            p1 <- p1 + ggtitle(sprintf("%s%s%s%s", mvar,
+                                       ifelse(is.null(test.name), "", paste("\n",test.name, " ", sep = "")), 
+                                       ifelse(is.null(pval), "", paste("p=", " ", sep = "")), 
+                                       ifelse(is.null(pval), "", paste(pval, " ", sep = "")), sep=""))
           }
           
-          if (statistics == "yes"| statistics == "YES"|statistics == "Yes"){
-            if (star == "no") {  
-              p1 <- p1 + stat_compare_means(method= testmethod, label = "p.format", comparisons = my_comparisons, size = 2)
-            }  else if (star == "yes") {
-              p1 <- p1 + stat_compare_means(method= testmethod, label = "p.signif", comparisons = my_comparisons, hide.ns = TRUE, size = 3)
+          # control statistic on the plot
+          if(test.name == "KW" | test.name == "ANOVA"){
+            if(pval < 0.05){
+              if (statistics == "yes"| statistics == "YES"|statistics == "Yes"){
+                if (star == "no") {  
+                  p1 <- p1 + stat_compare_means(method= testmethod, label = "p.format", comparisons = my_comparisons, size = 2)
+                }  else if (star == "yes") {
+                  p1 <- p1 + stat_compare_means(method= testmethod, label = "p.signif", comparisons = my_comparisons, hide.ns = TRUE, size = 3)
+                }
+              }else if(statistics == "no"| statistics == "NO"|statistics == "No"){
+                p1 <- p1 
+              }
+            }else {
+              p1 <- p1
             }
-          }else if(statistics == "no"| statistics == "NO"|statistics == "No"){
-            p1 <- p1 
+          }else if(testmethod == "wilcox.test" | testmethod == "t.test"){
+            if (statistics == "yes"| statistics == "YES"|statistics == "Yes"){
+              if (star == "no") {  
+                p1 <- p1 + stat_compare_means(method= testmethod, label = "p.format", comparisons = my_comparisons, size = 2)
+              }  else if (star == "yes") {
+                p1 <- p1 + stat_compare_means(method= testmethod, label = "p.signif", comparisons = my_comparisons, hide.ns = TRUE, size = 3)
+              }
+            }else if(statistics == "no"| statistics == "NO"|statistics == "No"){
+              p1 <- p1 
+            }
           }
+          
+
           
           # plot design
           if (height*width <= 6){
@@ -222,13 +282,16 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
             box.tickness = 0.5
           }
           
-          if(oc != "Chao1"){
-            if(!is.null(ylim)){
-              p1 = p1 + ylim(ylim[1] , ylim[2])
-            }else(
-              p1=p1
-            )
+
+          if(!is.null(ylim)){
+            if(oc == "Chao1"){
+              p1 = p1
+            }else{
+              p1 = p1 + ylim(ylim[1] , ylim[2])   
+            }
           }
+
+
           # paired plot type
           if (!is.null(paired)) {
             #p1 = p1 + geom_point(size = 1) 
@@ -239,8 +302,7 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
             
           }  else{
             p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
-            
-            
+      
             # count or table for number of variable
             if (max(table(df.cbn[,mvar])) > 250 & max(table(df.cbn[,mvar])) < 500){
               dot.size <- dot.size/2
@@ -251,8 +313,6 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
               dot.size <- dot.size/3
               p1 = p1 + geom_jitter(aes_string(colour=mvar),shape=16, alpha = 0.8, size = dot.size, position=position_jitter(0.2))
             }
-            
-            
           } 
           
           # facet
@@ -263,7 +323,6 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
           } else {
             p1 = p1 + guides(color = "none", size = "none", shape= "none")
           }
-          
           plotlist[[length(plotlist)+1]] <- p1 
         }
       }
@@ -278,16 +337,6 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
       };my_comparisons
       # check statistics method
       for(oc in outcomes){
-        if (statistics == "yes"| statistics == "YES"|statistics == "Yes"){
-          if (parametric == "yes"| parametric == "YES"|parametric == "Yes"){
-            testmethod <- "t.test"
-          }else{
-            testmethod <- "wilcox.test"
-          }
-        } 
-        
-        
-        
         # remove NA for facet
         if (!is.null(facet)) {
           for (fc in facet){
@@ -301,10 +350,36 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
         }
         
         
+        if (statistics == "yes"| statistics == "YES"|statistics == "Yes"){
+          if (parametric == "yes"| parametric == "YES"|parametric == "Yes"){
+            if (nlevels(factor(df.na[,mvar])) > 2) {
+              test <- aov(as.formula(sprintf("%s ~ %s", oc, mvar)), df.na)
+              pval <- round(summary(test)[[1]][["Pr(>F)"]][1],4)
+              test.name <- "ANOVA"
+              testmethod <-  "t.test"
+            } else {
+              testmethod <-  "t.test"
+              pval <- NULL
+              test.name <- "Pairwise T-Test"
+            }
+          }else{
+            if (nlevels(factor(df.na[,mvar])) > 2) {
+              test <- kruskal.test(as.formula(sprintf("%s ~ %s", oc, mvar)), df.na)
+              pval <- round(test$p.value, 4)
+              test.name <- "KW"
+              testmethod <- "wilcox.test"
+            } else {
+              testmethod <- "wilcox.test" 
+              pval <- NULL
+              test.name <- "Pairwise Wilcoxon"
+            }
+          } 
+        }
+        
         p1 <- ggplot(df.na, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
           theme_bw() + theme(strip.background = element_blank()) +
           theme(text=element_text(size=9), axis.text.x=element_text(angle=xanlgle,hjust=1,vjust=0.5),
-                plot.title=element_text(size=9))  #,face="bold"
+                plot.title=element_text(size=9)) #,face="bold"  
 
 
         # scale_color_brewer(palette=colorset)
@@ -318,20 +393,45 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
         
         # Close an image
         if (!is.null(title)) {
-          p1 <- p1 + ggtitle(title)
+          p1 <- p1 + ggtitle(sprintf("%s%s%s%s", title,
+                                     ifelse(is.null(test.name), "", paste("\n",test.name, " ", sep = "")), 
+                                     ifelse(is.null(test.name), "", paste("p=", " ", sep = "")), 
+                                     ifelse(is.null(pval), "", paste(pval, " ", sep = "")), sep=""))
         } else{
-          p1 <- p1 + ggtitle(sprintf("%s", mvar))
+          p1 <- p1 + ggtitle(sprintf("%s%s%s%s", mvar,
+                                     ifelse(is.null(test.name), "", paste("\n",test.name, " ", sep = "")), 
+                                     ifelse(is.null(test.name), "", paste("p=", " ", sep = "")), 
+                                     ifelse(is.null(pval), "", paste(pval, " ", sep = "")), sep=""))
         }
         
-        if (statistics == "yes"| statistics == "YES"|statistics == "Yes"){
-          if (star == "no") {  
-            p1 <- p1 + stat_compare_means(method= testmethod, label = "p.format", comparisons = my_comparisons, size = 2)
-          }  else if (star == "yes") {
-            p1 <- p1 + stat_compare_means(method= testmethod, label = "p.signif", comparisons = my_comparisons, hide.ns = TRUE, size = 3)
+        # control statistic on the plot
+        if(test.name == "KW" | test.name == "ANOVA"){
+          if(pval < 0.05){
+            if (statistics == "yes"| statistics == "YES"|statistics == "Yes"){
+              if (star == "no") {  
+                p1 <- p1 + stat_compare_means(method= testmethod, label = "p.format", comparisons = my_comparisons, size = 2)
+              }  else if (star == "yes") {
+                p1 <- p1 + stat_compare_means(method= testmethod, label = "p.signif", comparisons = my_comparisons, hide.ns = TRUE, size = 3)
+              }
+            }else if(statistics == "no"| statistics == "NO"|statistics == "No"){
+              p1 <- p1 
+            }
+          }else {
+            p1 <- p1
           }
-        }else if(statistics == "no"| statistics == "NO"|statistics == "No"){
-          p1 <- p1 
+        }else if(testmethod == "wilcox.test" | testmethod == "t.test"){
+          if (statistics == "yes"| statistics == "YES"|statistics == "Yes"){
+            if (star == "no") {  
+              p1 <- p1 + stat_compare_means(method= testmethod, label = "p.format", comparisons = my_comparisons, size = 2)
+            }  else if (star == "yes") {
+              p1 <- p1 + stat_compare_means(method= testmethod, label = "p.signif", comparisons = my_comparisons, hide.ns = TRUE, size = 3)
+            }
+          }else if(statistics == "no"| statistics == "NO"|statistics == "No"){
+            p1 <- p1 
+          }
         }
+        
+        
         # plot design
         if (height*width <= 6){
           dot.size = 0.7
@@ -345,11 +445,11 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
         }
         
         # y axis limit      
-        if(oc == "Shannon"){
-          if(!is.null(ylim)){
-            p1 = p1 + ylim(ylim[1] , ylim[2])
+        if(!is.null(ylim)){
+          if(oc == "Chao1"){
+            p1 = p1
           }else{
-            p1=p1
+            p1 = p1 + ylim(ylim[1] , ylim[2])   
           }
         }
         
@@ -358,7 +458,7 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
           p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")
           p1 = p1 + geom_point(aes_string(fill=mvar,group=paired),alpha = 0.8, size = dot.size, position = position_dodge(0.3), show.legend = F)   #scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
           p1 = p1 + geom_line(aes_string(group=paired), color="grey50", size=0.3,position = position_dodge(0.3)) 
-          p1 = p1  + theme(legend.title = element_blank(), legend.position="bottom", legend.justification="left",legend.box.margin = ggplot2::margin(0,0,0,-1,"cm")) 
+          p1 = p1 + theme(legend.title = element_blank(), legend.position="bottom", legend.justification="left",legend.box.margin = ggplot2::margin(0,0,0,-1,"cm")) 
           
         } else{
           p1 = p1 + geom_boxplot(aes_string(colour=mvar),outlier.shape = NA,lwd=box.tickness)  + theme(legend.position="none")

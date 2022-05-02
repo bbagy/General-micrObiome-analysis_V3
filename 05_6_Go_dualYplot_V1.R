@@ -17,9 +17,26 @@ Go_dualYplot <- function(df, TaxTab, cate.vars, project,  Box, Line1, Line2=NULL
   if(!file_test("-d", out_path)) dir.create(out_path)
   set.seed(151) 
   
+
+
   # out file
+  # "name" definition
+  if (class(name) == "function"){
+    name <- NULL
+  }
+  
+  tt <- try(mycols,T)
+  if(class(tt) == "try-error"){
+    print("mycols is not defined.")
+    mycols <- NULL
+  }
 
-
+  tt <- try(orders,T)
+  if(class(tt) == "try-error"){
+    print("orders is not defined.")
+    orders <- NULL
+  }
+  # out file
   pdf(sprintf("%s/dualYplot.%s.%s%s%s.pdf", out_path, 
               project, 
               ifelse(is.null(Line1), "", paste(Line1, ".", sep = "")), 

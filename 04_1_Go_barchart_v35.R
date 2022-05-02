@@ -8,7 +8,7 @@
 #' Go_barchart()
 
 
-Go_barchart <- function(psIN, cate.vars, project, taxanames, orders,
+Go_barchart <- function(psIN, cate.vars, project, taxanames, orders=NULL,
                         simple = FALSE,  
                         mycols=NULL, 
                         relative = T,
@@ -43,11 +43,24 @@ if(!is.null(x_label)){
 
 
 
-  # logic for out file
-    # "name" definition
+  # out file
+  # "name" definition
   if (class(name) == "function"){
     name <- NULL
   }
+  
+  tt <- try(mycols,T)
+  if(class(tt) == "try-error"){
+    print("mycols is not defined.")
+    mycols <- NULL
+  }
+
+  tt <- try(orders,T)
+  if(class(tt) == "try-error"){
+    print("orders is not defined.")
+    orders <- NULL
+  }
+  
 
 if(relative == T){
   pdf(sprintf("%s/barchart.relative.%s.%s%s(%s).%s.pdf", out_path, 

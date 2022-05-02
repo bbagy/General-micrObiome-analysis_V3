@@ -11,8 +11,24 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
   if(!file_test("-d", out_path)) dir.create(out_path)
   set.seed(151) 
   
+  # out file
+  # "name" definition
+  if (class(name) == "function"){
+    name <- NULL
+  }
   
-  
+  tt <- try(mycols,T)
+  if(class(tt) == "try-error"){
+    print("mycols is not defined.")
+    mycols <- NULL
+  }
+
+  tt <- try(orders,T)
+  if(class(tt) == "try-error"){
+    print("orders is not defined.")
+    orders <- NULL
+  }
+
   
   if(!is.null(top)){
     Top = names(sort(taxa_sums(psIN), TRUE)[1:top])

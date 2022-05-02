@@ -12,8 +12,15 @@ Go_filter <- function(psIN, cutoff){ #project
 
 
   # remove 0 ASVs
-  psIN.prune = prune_samples(sample_sums(psIN) > 1, psIN);psIN.prune
-
+  
+  tt = try(psIN.prune <- prune_samples(sample_sums(psIN) > 1, psIN),T)
+  if (class(tt) == "try-error"){
+    psIN.prune = prune_samples(sample_sums(psIN) > 0, psIN);psIN.prune
+  }else{
+    psIN.prune <- prune_samples(sample_sums(psIN) > 1, psIN);psIN.prune
+  }
+  
+  
   x <- sample_sums(psIN.prune) > 1
   cat("#--  Removing 0 sum column   --#\n")
   cat(sprintf("#--  %s column(s) are removed   --#\n", length(x[x== F])))

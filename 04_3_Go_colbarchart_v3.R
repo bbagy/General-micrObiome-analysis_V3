@@ -9,7 +9,17 @@
 #' 20200525
 #' color for phylum
 
-Go_colbarchart <- function(psIN, metaData, project, taxRanks, data_type, x_label, facet, legend, orders, cutoff, name, ncol,height, width,plotCols, plotRows){
+Go_colbarchart <- function(psIN, cate.vars, project, taxanames, data_type, orders, 
+                        simple = FALSE,  
+                        mycols=NULL, 
+                        relative = T,
+                        x_label=NULL, 
+                        facet=NULL, 
+                        legend="bottom", 
+                        cutoff=0.005, 
+                        name=NULL, 
+                        ncol=NULL,
+                        height, width){
     if(!is.null(dev.list())) dev.off()
     
   # out dir
@@ -18,28 +28,42 @@ Go_colbarchart <- function(psIN, metaData, project, taxRanks, data_type, x_label
   out_path <- file.path(sprintf("%s_%s/pdf",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out_path)) dir.create(out_path)
 
+if(!is.null(x_label)){
+  x_label = x_label
+}else{
+  x_label="SampleIDfactor"
+}
+
+  # out file
+  # "name" definition
+  if (class(name) == "function"){
+    name <- NULL
+  }
   
-  #meta data
-  metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
-  metadata <- as.data.frame(t(metadataInput))
-  
+  tt <- try(mycols,T)
+  if(class(tt) == "try-error"){
+    print("orders is not defined.")
+    mycols <- NULL
+  }
   
   # logic for out file
-  if (length(facet) == 1) {
-    if (length(name) == 1) {
-      pdf(sprintf("%s_%s/pdf/3_colbarchart.%s.%s.%s.(%s).%s.pdf",project, format(Sys.Date(), "%y%m%d"),project, facet,name, cutoff, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    } else {
-      pdf(sprintf("%s_%s/pdf/3_colbarchart.%s.%s.(%s).%s.pdf",project, format(Sys.Date(), "%y%m%d"),project, facet, cutoff, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }else {
-    if (length(name) == 1) {
-      pdf(sprintf("%s_%s/pdf/3_colbarchart.%s.%s.(%s).%s.pdf",project, format(Sys.Date(), "%y%m%d"),project,name,cutoff, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }else {
-      pdf(sprintf("%s_%s/pdf/3_colbarchart.%s.(%s).%s.pdf",project, format(Sys.Date(), "%y%m%d"),project,cutoff, format(Sys.Date(), "%y%m%d")), height = height, width = width)
-    }
-  }
-  ranks <- taxRanks
-  taxaname <- ranks
+if(relative == T){
+  pdf(sprintf("%s/colbarchart.relative.%s.%s%s(%s).%s.pdf", out_path, 
+              project, 
+              ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              cutoff,
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
+}else{
+  pdf(sprintf("%s/colbarchart.absolute.%s.%s%s(%s).%s.pdf", out_path, 
+              project, 
+              ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              cutoff,
+              format(Sys.Date(), "%y%m%d")), height = height, width = width)
+}
+
+  taxRanks <- taxanames
   
   # order by bdiv
   ordi <- ordinate(psIN , method = "PCoA", distance = "bray")
@@ -47,38 +71,47 @@ Go_colbarchart <- function(psIN, metaData, project, taxRanks, data_type, x_label
   mapping.sel <- data.frame(sample_data(psIN))
 
   plotlist <- list()
-  for(i in 1:length(taxaname)){
-    # dada2 or nephele
-    if (data_type == "dada2" | data_type == "DADA2") {
-      otu.filt <- as.data.frame(t(otu_table(psIN)))
+  for(i in 1:length(taxanames)){
+
+
+    # try table type
+    otu.filt <- as.data.frame(otu_table(psIN)) 
+    tt <- try(otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i]),T)
+    
+    if(class(tt) == "try-error"){
+      print("DADA2 table")
+      otu.filt <- as.data.frame(t(otu_table(psIN))) 
+      otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i])
+    }else{
+      otu.filt <- as.data.frame(otu_table(psIN)) 
+      print("other table")
+      otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=colnames(tax_table(psIN)),level=taxanames[i])
     }
-    else if (data_type == "Nephele" | data_type == "nephele" | data_type == "Other" | data_type == "other") {
-      otu.filt <- as.data.frame(otu_table(psIN))
-    }
+    
 
     # continue
-    otu.filt[,taxaname[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=taxRanks,level=taxaname[i])
+    otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=taxRanks,level=taxanames[i])
     otu.filt$PhylumCol <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN), taxRanks=taxRanks, level="Phylum")
 
     if (dim(otu.filt)[2] == 2){
       next
     }
 
-    agg <- aggregate(as.formula(sprintf(". ~ %s + PhylumCol" , taxaname[i])), otu.filt, sum, na.action=na.pass)
-    genera <- agg[,taxaname[i]]
+    agg <- aggregate(as.formula(sprintf(". ~ %s + PhylumCol" , taxanames[i])), otu.filt, sum, na.action=na.pass)
+    genera <- agg[,taxanames[i]]
     PhylumCol <- agg$PhylumCol
-    agg[,taxaname[i]] <- NULL
+    agg[,taxanames[i]] <- NULL
     agg$PhylumCol <- NULL
 
     agg <- normalizeByCols(agg)
     inds_to_grey <- which(rowMeans(agg) < cutoff)
     genera[inds_to_grey] <- "[1_#Other]"
-    agg[,taxaname[i]] <- genera
+    agg[,taxanames[i]] <- genera
     agg$PhylumCol <- PhylumCol 
     
     
     
-    if (taxaname[i] == "Phylum"){
+    if (taxanames[i] == "Phylum"){
       agg$Phylum <- genera
     }
     
@@ -87,7 +120,7 @@ Go_colbarchart <- function(psIN, metaData, project, taxRanks, data_type, x_label
 
     # add StduyID
 
-    df2 <- aggregate(as.formula(sprintf("value ~ %s + PhylumCol + SampleID" , taxaname[i])), df, sum)
+    df2 <- aggregate(as.formula(sprintf("value ~ %s + PhylumCol + SampleID" , taxanames[i])), df, sum)
     df2$SampleID <- as.character(df2$SampleID)
     df2$SampleIDfactor <- factor(df2$SampleID, levels=ordering.pc1)
     df.SampleIDstr <- unique(df2[,c("SampleID", "SampleIDfactor")]);head(df.SampleIDstr)
@@ -95,7 +128,7 @@ Go_colbarchart <- function(psIN, metaData, project, taxRanks, data_type, x_label
     #mapping.sel[df2$SampleID, "StudyID"]
 
     # add groups
-    for (mvar in rownames(subset(metadata, Go_barchart =="yes"))) {
+    for (mvar in cate.vars) {
       df.SampleIDstr$Group <- as.character(mapping.sel[df.SampleIDstr$SampleID, mvar])
       df2[,mvar] <- mapping.sel[df2$SampleID, mvar]
 
@@ -132,27 +165,26 @@ Go_colbarchart <- function(psIN, metaData, project, taxRanks, data_type, x_label
     # ---  Color table   --- #
     #------------------------#
     agg$PhylumCol <- PhylumCol 
-    agg[,taxaname[i]] <- genera
+    agg[,taxanames[i]] <- genera
     
 
     #-------- remove other from taxa table --------#
-    TaxaTab <- agg[order(agg[,taxaname[i]] ,  decreasing = TRUE), ]
-    cdf <- data.frame(subset(TaxaTab, select=c("PhylumCol", taxaname[i])))
-    cdf.sel <- subset(cdf, cdf[,taxaname[i]] != "[1_#Other]");dim(cdf.sel)[1]
+    TaxaTab <- agg[order(agg[,taxanames[i]] ,  decreasing = TRUE), ]
+    cdf <- data.frame(subset(TaxaTab, select=c("PhylumCol", taxanames[i])))
+    cdf.sel <- subset(cdf, cdf[,taxanames[i]] != "[1_#Other]");dim(cdf.sel)[1]
     
     # 몇개인지 결정후 Phylum 으로 정리
     N <- dim(cdf.sel)[1]
     cdf.sel <- cdf.sel[order(cdf.sel$PhylumCol ,  decreasing = FALSE), ]
-    cdf.sel <- data.frame(as.character(cdf.sel$PhylumCol[1:N]), as.character(cdf.sel[,taxaname[i]][1:N]))
-    colnames(cdf.sel) <- c("PhylumCol", taxaname[i])
+    cdf.sel <- data.frame(as.character(cdf.sel$PhylumCol[1:N]), as.character(cdf.sel[,taxanames[i]][1:N]))
+    colnames(cdf.sel) <- c("PhylumCol", taxanames[i])
     #cdf.sel[ ,c("Kingdom","Class", "Order", "Family","Genus")] <- list(NULL)
     
-    cdf.sel[,taxaname[i]] <-  gsub("p__", "", gsub("c__", "", gsub("o__", "", gsub("f__", "", gsub("g__", "", gsub("s__", "", cdf.sel[,taxaname[i]]))))))
-    
+    cdf.sel[,taxanames[i]] <-  gsub("p__", "", gsub("c__", "", gsub("o__", "", gsub("f__", "", gsub("g__", "", gsub("s__", "", cdf.sel[,taxanames[i]]))))))
     
     # save species name
-    taxaName <- cdf.sel[,taxaname[i]]
-    cdf.sel[,taxaname[i]] <- NULL
+    taxaName <- cdf.sel[,taxanames[i]]
+    cdf.sel[,taxanames[i]] <- NULL
     
     # -----  create color table   ---- #
     coltab <- Go_color(cdf=cdf.sel, taxaName=taxaName)
@@ -184,12 +216,12 @@ Go_colbarchart <- function(psIN, metaData, project, taxRanks, data_type, x_label
     # plot
     # df2 <- df2[order(df2$value, decreasing=T),]
     print(3)
-    level <- unique(df2[,taxaname[i]])
+    level <- unique(df2[,taxanames[i]])
     #facet <- "SampleType"
     #mvar <- "TreatmentGroup"
     df2[,facet] <- factor(df2[,facet], levels = orders)
     if (length(facet) == 1) {
-      for (mvar in rownames(subset(metadata, Go_barchart =="yes"))) {
+      for (mvar in cate.vars) {
         if (class(ncol) == "numeric") {
           ncol <- ncol
         }else if(length(unique(df2[,mvar])) >= 1){
@@ -202,7 +234,7 @@ Go_colbarchart <- function(psIN, metaData, project, taxRanks, data_type, x_label
         df2[,facet] <- factor(df2[,facet], levels = orders)
         print(4)
         
-        p <- ggplot(df2, aes_string(x= x_label, y="value", fill=factor(df2[,taxaname[i]], levels=level), order=taxaname[i])) + geom_bar(stat="identity", position="stack") + theme_classic()  + theme(legend.position=legend, legend.text=element_text(size=8), axis.title.x = element_blank(), axis.text.x = element_text(angle=90, vjust=0.5, hjust=1, size=8)) + guides(fill=guide_legend(ncol= col))  + guides(col = guide_legend(ncol = col)) + ylim(c(-.1, 1.01)) + scale_fill_manual(values=coltab$coloring) + facet_wrap(as.formula(sprintf("~ %s + %s", paste(setdiff(facet, "SampleType"), collapse="+"), mvar)), scales="free_x", ncol = ncol) + labs(y = "Relative abundance") + labs(fill = taxaname[i])
+        p <- ggplot(df2, aes_string(x= x_label, y="value", fill=factor(df2[,taxanames[i]], levels=level), order=taxanames[i])) + geom_bar(stat="identity", position="stack") + theme_classic()  + theme(legend.position=legend, legend.text=element_text(size=8), axis.title.x = element_blank(), axis.text.x = element_text(angle=90, vjust=0.5, hjust=1, size=8)) + guides(fill=guide_legend(ncol= col))  + guides(col = guide_legend(ncol = col)) + ylim(c(-.1, 1.01)) + scale_fill_manual(values=coltab$coloring) + facet_wrap(as.formula(sprintf("~ %s + %s", paste(setdiff(facet, "SampleType"), collapse="+"), mvar)), scales="free_x", ncol = ncol) + labs(y = "Relative abundance") + labs(fill = taxanames[i])
 
         
         if (length(name) == 1) {
@@ -217,14 +249,19 @@ Go_colbarchart <- function(psIN, metaData, project, taxRanks, data_type, x_label
       }
 
     } else if (length(facet) != "NULL") {
-      for (mvar in rownames(subset(metadata, Go_barchart =="yes"))) {
+      for (mvar in cate.vars) {
         if (class(ncol) == "numeric") {
           ncol <- ncol
         }else if(length(unique(df2[,mvar])) >= 1){
           ncol <- length(unique(df2[,mvar]))
         }
 
-        p <- ggplot(df2, aes_string(x= x_label, y="value", fill=factor(df2[,taxaname[i]], levels=level), order=taxaname[i])) + geom_bar(stat="identity", position="stack") + theme_classic()  + theme(legend.position= legend, legend.text=element_text(size=8), axis.title.x = element_blank(), axis.text.x = element_text(angle=90, vjust=0.5, hjust=1, size=8)) + guides(fill=guide_legend(ncol= col)) + guides(col = guide_legend(ncol = col)) + ylim(c(-.1, 1.01)) + scale_fill_manual(values=coltab$coloring) + facet_wrap(as.formula(sprintf("~ %s"  ,mvar)), scales="free_x", ncol = ncol) + labs(y = "Relative abundance")+ labs(fill = taxaname[i])
+        p <- ggplot(df2, aes_string(x= x_label, y="value", fill=factor(df2[,taxanames[i]], levels=level), order=taxanames[i])) + 
+        geom_bar(stat="identity", position="stack") + theme_classic()  + 
+        theme(legend.position= legend, legend.text=element_text(size=8), axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle=90, vjust=0.5, hjust=1, size=8)) + guides(fill=guide_legend(ncol= col)) + 
+        guides(col = guide_legend(ncol = col)) + ylim(c(-.1, 1.01)) + scale_fill_manual(values=coltab$coloring) + 
+        facet_wrap(as.formula(sprintf("~ %s"  ,mvar)), scales="free_x", ncol = ncol) + labs(y = "Relative abundance")+ labs(fill = taxanames[i])
         if (length(name) == 1) {
           p= p+ ggtitle(sprintf("Taxa barplots overall of %s-%s (cut off < %s)",mvar,name, cutoff))
         }

@@ -5,7 +5,7 @@
 
 Go_DA <- function(psIN,  project, order,type="taxonomy", filter, taxanames=NULL, data_type = "other", 
                   cate.vars,  cate.conf=NULL, orders=NULL,
-                  des=NULL, name=NULL, fdr=0.05){
+                  name=NULL, fdr=0.05){
 
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
@@ -48,14 +48,8 @@ Go_DA <- function(psIN,  project, order,type="taxonomy", filter, taxanames=NULL,
     if (length(unique(mapping.sel.na.rem[,mvar])) == 1 )
       next
 
-    if (length(des) == 1) {
-      print(sprintf("##-- %s-%s (total without NA: %s/%s) --##",
-                    des,mvar, dim(mapping.sel.na.rem)[1], dim(mapping.sel)[1]))
-
-    } else{
-      print(sprintf("##-- %s (total without NA: %s/%s) --##",
+   print(sprintf("##-- %s (total without NA: %s/%s) --##",
                     mvar, dim(mapping.sel.na.rem)[1], dim(mapping.sel)[1]))
-    }
 
     if (length(mapping.sel.na.rem[,mvar]) < 4){
       next
@@ -124,7 +118,6 @@ Go_DA <- function(psIN,  project, order,type="taxonomy", filter, taxanames=NULL,
       print(sprintf("~ %s", mvar))
     }
 
-    
     geoMeans = apply(counts(dds), 1, gm_mean)
     dds = estimateSizeFactors(dds, geoMeans = geoMeans)
     dds = estimateDispersions(dds)
@@ -186,9 +179,7 @@ Go_DA <- function(psIN,  project, order,type="taxonomy", filter, taxanames=NULL,
       tmp$bas.count <-  sum(with(mapping.sel.cb, mapping.sel.cb[,mvar] == basline))
       tmp$smvar <- smvar
       tmp$smvar.count <-  sum(with(mapping.sel.cb, mapping.sel.cb[,mvar] == smvar))
-      if (length(des) == 1) {
-        tmp$des <- des
-      }
+
       
       
       
@@ -322,13 +313,15 @@ Go_DA <- function(psIN,  project, order,type="taxonomy", filter, taxanames=NULL,
       res$basline <- gsub("Vn","V-",res$basline)
       res$smvar <- gsub("Vn","V-",res$smvar)
 
+      res <- arrange(res, res$padj)
+
       write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/(%s.vs.%s).Sig%s.%s.%s%s%s%s.DA.csv",out_DA.Tab,
                                                                basline, 
                                                                smvar,
                                                                dim(res.sel)[1],
                                                                mvar,
-                                                               ifelse(is.null(des), "", paste(des, ".", sep = "")), 
                                                                ifelse(is.null(taxanames), "", paste(taxanames, ".", sep = "")), 
+                                                               ifelse(is.null(cate.conf), "", paste("with_confounder", ".", sep = "")), 
                                                                ifelse(is.null(name), "", paste(name, ".", sep = "")), 
                                                                project, sep="/"))
       
@@ -337,8 +330,8 @@ Go_DA <- function(psIN,  project, order,type="taxonomy", filter, taxanames=NULL,
                                   smvar,
                                   dim(res.sel)[1],
                                   mvar, 
-                                  ifelse(is.null(des), "", paste(des, ".", sep = "")), 
                                   ifelse(is.null(taxanames), "", paste(taxanames, ".", sep = "")), 
+                                  ifelse(is.null(cate.conf), "", paste("with_confounder", ".", sep = "")), 
                                   ifelse(is.null(name), "", paste(name, ".", sep = "")), 
                                   project))
       

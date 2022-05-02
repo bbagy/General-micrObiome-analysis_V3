@@ -13,7 +13,7 @@
 nperm <- 100000
 
 
-Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_threshold, taxanames, des, name){
+Go_lmem <- function(psIN, cate.vars, cate.conf=NULL, StudyID, project, pval=0.05, nsamps_threshold, filt_threshold, taxanames, name){
 
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
@@ -31,21 +31,16 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
   
   
   
-  # ranks <- taxRanks
-  # taxanames <- ranks
+
+  #taxRanks <- taxanames
+
+  psIN.agg <- aggregate_taxa(psIN, taxanames);psIN.agg
   
-  #meta data
-  metadataInput <- read.csv(sprintf("%s",metaData),header=T,as.is=T,row.names=1,check.names=F)
-  metadata <- as.data.frame(t(metadataInput))
-  
-  psIN.agg <- aggregate_taxa(psIN, taxRanks);psIN.agg
-  
-  
-  for (cvar in rownames(subset(metadata, Confounder =="yes"))) {
+  for (cvar in cate.conf) {
     df[, cvar] <- mapping.sel[df$SampleID, cvar]
   }
-  for (mvar in rownames(subset(metadata, Go_lmem =="yes"))) {
-    
+  
+  for (mvar in cate.vars) {
     
   # combination
   mapping.sel <- data.frame(sample_data(psIN))
@@ -87,8 +82,7 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
         otu.filt[,taxanames[i]] <- getTaxonomy(otus=rownames(otu.filt), tax_tab=tax_table(psIN.cb), taxRanks=colnames(tax_table(psIN.cb)),level=taxanames[i])
       }
       
-      
-      
+    
       agg <- aggregate(as.formula(sprintf(". ~ %s" , taxanames[i])), otu.filt, sum, na.action=na.pass)
       genera <- agg[,taxanames[i]]
       
@@ -120,13 +114,25 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
         }
         
         df <- melt(agg[f,]); colnames(df) <- c("Genus", "SampleID", "value"); df$SampleID <- as.character(df$SampleID)
-        
         df$StudyID <- mapping.sel.cb[df$SampleID, StudyID]
         
         
         
+        # add groups
+        for (cate in cate.conf) {
+          df$Group <- as.character(mapping.sel[df$SampleID, cate])
+          df[,cate] <- mapping.sel[df$SampleID, cate]
+          
+          # order
+          if (length(orders) >= 1) {
+            df[,mvar] <- factor(df[,cate], levels = orders)
+          }
+          else {
+            df[,mvar] <- factor(df[,cate])
+          }
+        }
         
-  
+        
           # na remove
 
           mapping.sel.cb[mapping.sel.cb==""] <- "NA"
@@ -137,46 +143,63 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
           
           
           #------------ fix column types------------#
-          if (metadata[mvar, "type"] == "factor") {
-            mapping.na[,mvar] <- factor(mapping.na[,mvar])
-            if (length(unique(mapping.na[,mvar])) ==1 ){
-              next
-            }
-            #if (metadata[mvar, "baseline"] != "") {
-            #  mapping.na[,mvar] <- relevel(mapping.na[,mvar], metadata[mvar, "baseline"])
-            #}
-          } else if (metadata[mvar, "type"] == "numeric") {
-            mapping.na[,mvar] <- factor(mapping.na[,mvar])
-          }
-          
+           mapping.na[,mvar] <- factor(mapping.na[,mvar])
+          #if (metadata[mvar, "type"] == "factor") {
+          #  mapping.na[,mvar] <- factor(mapping.na[,mvar])
+          #  if (length(unique(mapping.na[,mvar])) ==1 ){
+          #    next
+          #  }
+          #  #if (metadata[mvar, "baseline"] != "") {
+          #  #  mapping.na[,mvar] <- relevel(mapping.na[,mvar], metadata[mvar, "baseline"])
+          #  #}
+          #} else if (metadata[mvar, "type"] == "numeric") {
+          #  mapping.na[,mvar] <- factor(mapping.na[,mvar])
+          #}
+         
+
           print(3)
           
           
           # na count
-          if (length(des) == 1) {
-            print(sprintf("##-- %s-%s (total without NA: %s/%s) --##",
-                          des,mvar, dim(mapping.na)[1], dim(mapping)[1]))
-          } else{
-            print(sprintf("##-- %s (total without NA: %s/%s) --##",
-                          mvar, dim(mapping.na)[1], dim(mapping)[1]))
-          }
+          print(sprintf("##-- %s (total without NA: %s/%s) --##",
+                        mvar, dim(mapping.na)[1], dim(mapping)[1]))
           print(4)
           
           df[,mvar] <- mapping.na[df$SampleID, mvar]
-          #form <- as.formula(sprintf("value ~ %s + %s + (1 | StudyID)", mvar, paste(rownames(subset(metadata, Go_lmemConfounder=="yes")), collapse="-")))
-          form <- as.formula(sprintf("value ~ %s +  (1 | StudyID)", mvar))
           
-          mod <- lmer(form, data=df, control=lmerControl(check.nobs.vs.nlev = "ignore",check.nobs.vs.rankZ = "ignore",check.nobs.vs.nRE="ignore"))
+          #=====================#
+          #  Regression method  #
+          #=====================#
+          if(!is.null(StudyID)){
+            reg <- "LMEM"
+            form <- as.formula(sprintf("value ~ (1 | StudyID) + %s  %s", mvar, 
+                                       ifelse(is.null(cate.conf), "", paste("+",setdiff(cate.conf, "SampleType"), collapse=""))))
+            print(form)
+            tt <- try(mod <- lmer(form, data=df, control=lmerControl(check.nobs.vs.nlev = "ignore",check.nobs.vs.rankZ = "ignore",check.nobs.vs.nRE="ignore")),T)
+            if(class(tt) == "try-error"){
+              next
+            }else{
+              mod <- lmer(form, data=df, control=lmerControl(check.nobs.vs.nlev = "ignore",check.nobs.vs.rankZ = "ignore",check.nobs.vs.nRE="ignore"))
+            }
+          }else{
+            reg <- "GLM"
+            form <- as.formula(sprintf("value ~ %s  %s", mvar, 
+                                       ifelse(is.null(cate.conf), "", paste("+",setdiff(cate.conf, "SampleType"), collapse=""))));form
+            print(form)
+            mod <- glm(form, data=df,  family = binomial(link='logit'))
+          }
+            
+
+
+          #exp(coef(mod))
+
           ## lmer에서 control=은 "number of levels of each grouping~~" 오류가 있을때만 사용한다.
           ##
           # mod2 <- lmer(form, data=df)
           
           coef <- summary(mod)$coefficients
           coef <- coef[grep(mvar, rownames(coef)),,drop=F]
-          
           res <- rbind(res, cbind(f, mvar, rownames(coef), coef, baseline))
-          
-          
           dim(res)
         }
       }
@@ -184,20 +207,37 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
       
       #-- create table --#
       res <- as.data.frame(res)
-      colnames(res) <- c("taxa", "metadata", "coefficient", "Estimate", "SE", "df", "t", "pvalue", "baseline")
+      #colnames(res) <- c("taxa", "metadata", "coefficient", "Estimate", "SE", "df", "t", "pvalue", "baseline")
       print(5)
-      res$pvalue <- as.numeric(as.character(res$pvalue))
-      res$Estimate <- as.numeric(as.character(res$Estimate))
-      res$SE <- as.numeric(as.character(res$SE))
-      res$padj <- p.adjust(res$pvalue, method="fdr")
-      res <- res[order(res$pvalue),]
-      if (length(des) == 1) {
-        res$des <- des
+      
+      if(!is.null(StudyID)){
+        reg <- "LMEM"
+        res$pvalue <- as.numeric(as.character(res$`Pr(>|t|)`))
+        res$`Pr(>|t|)` <- NULL
+      }else{
+        reg <- "GLM"
+        res$pvalue <- as.numeric(as.character(res$`Pr(>|z|)`))
+        res$`Pr(>|z|)` <- NULL
       }
       
-      res.sel <- as.data.frame(subset(res, padj < 0.05))
+      res$Estimate <- as.numeric(as.character(res$Estimate))
+      res$SE <- as.numeric(as.character(res$`Std. Error`))
+      res$padj <- p.adjust(res$pvalue, method="fdr")
+      res$method <- reg
+      
+      res <- res[order(res$pvalue),]
+      res.sel <- res
+      # res.sel <- as.data.frame(subset(res, pvalue < pval))
       taxa_sig <- res.sel$taxa[1:dim(res.sel)[1]]; summary(taxa_sig)
       
+      if(dim(res.sel)[1] == 0){
+        next
+      }else{
+        res.sel$bas.count <-  unique(sum(with(mapping.na, mapping.na[,mvar] == baseline)))
+        res.sel$coef.count <-  unique(sum(with(mapping.na, mapping.na[,mvar] == smvar)))
+      }
+      
+
       
        if(dim(res.sel)[1] == 0){
         ps.taxa.sig <- psIN.cb
@@ -220,27 +260,32 @@ Go_lmem <- function(psIN, metaData, StudyID, project, nsamps_threshold, filt_thr
         }
       }
       
+
+      #res.sel <- arrange(res.sel, res.sel$pvalue)
+
+
+
       
-      write.csv(res, quote = FALSE,col.names = NA,file=sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.%s%s%s.lmem.csv",out_lmem.Tab,
+      write.csv(res.sel, quote = FALSE,col.names = NA,file=sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.%s%s.%s.csv",out_lmem.Tab,
                                                                baseline, 
                                                                smvar,
                                                                dim(res.sel)[1],
                                                                taxanames[i], 
                                                                mvar,
-                                                               ifelse(is.null(des), "", paste(des, ".", sep = "")), 
                                                                ifelse(is.null(name), "", paste(name, ".", sep = "")), 
                                                                project, 
+                                                               reg, 
                                                                sep="/"))
-      saveRDS(ps.taxa.sig,sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.%s%s%s%s.lmem.rds",out_lmem.ps,
+      saveRDS(ps.taxa.sig,sprintf("%s/(%s.vs.%s).Sig%s.%s.%s.%s%s%s.%s.rds",out_lmem.ps,
                                   baseline, 
                                   smvar,
                                   dim(res.sel)[1],
                                   taxanames[i], 
                                   mvar, 
-                                  ifelse(is.null(des), "", paste(des, ".", sep = "")), 
                                   ifelse(is.null(taxanames), "", paste(taxanames, ".", sep = "")), 
                                   ifelse(is.null(name), "", paste(name, ".", sep = "")), 
-                                  project))
+                                  project,
+                                  reg))
   }
  }
 }

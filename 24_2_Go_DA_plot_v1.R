@@ -27,6 +27,14 @@ Go_DA_plot <- function(project, file_path,files, type="taxonomy", plot = "volcan
     name <- NULL
   }
   
+  tt <- try(mycols,T)
+  if(class(tt) == "try-error"){
+    print("mycols is not defined.")
+    mycols <- NULL
+  }
+
+
+  
   for (fn in 1:length(filenames)) {
 
     df <- read.csv(sprintf("%s/%s",path, filenames[fn]), row.names=NULL ,check.names=FALSE,quote = "")

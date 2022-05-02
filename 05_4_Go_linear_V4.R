@@ -24,6 +24,17 @@ Go_linear <- function(df, cont.vars, project, outcomes,
   if (class(name) == "function"){
     name <- NULL
   }
+  
+  tt <- try(mycols,T)
+  if(class(tt) == "try-error"){
+    print("mycols is not defined.")
+    mycols <- NULL
+  }
+  tt <- try(orders,T)
+  if(class(tt) == "try-error"){
+    print("orders is not defined.")
+    orders <- NULL
+  }
   pdf(sprintf("%s/linear.%s.%s.%s.%s.pdf", out_path, 
               project, 
               ifelse(is.null(maingroup), "", paste(maingroup, ".", sep = "")), 

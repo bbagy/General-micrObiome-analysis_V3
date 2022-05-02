@@ -26,11 +26,24 @@ Go_clme <- function(psIN, cate.vars, project, paired, mycols=NULL, node, decreas
   if(!file_test("-d", out_path)) dir.create(out_path)
   
   
-    # logic for out file
-    # "name" definition
+  # out file
+  # "name" definition
   if (class(name) == "function"){
     name <- NULL
   }
+  
+  tt <- try(mycols,T)
+  if(class(tt) == "try-error"){
+    print("mycols is not defined.")
+    mycols <- NULL
+  }
+
+  tt <- try(orders,T)
+  if(class(tt) == "try-error"){
+    print("orders is not defined.")
+    orders <- NULL
+  }
+
   pdf(sprintf("%s/clme.%s.%s(%s.%s).%s.pdf", out_path, 
               project, 
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 
