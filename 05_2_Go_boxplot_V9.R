@@ -148,8 +148,16 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
           smvar3 <- group.combination[4]
           smvar4 <- group.combination[5]
           df.cbn <- subset(df.na, df.na[,mvar] %in% c(basline,smvar1, smvar2,smvar3,smvar4)) 
+        }else if(combination ==6){
+          basline <- group.combination[1]
+          smvar1 <- group.combination[2]
+          smvar2 <- group.combination[3]
+          smvar3 <- group.combination[4]
+          smvar4 <- group.combination[5]
+          smvar5 <- group.combination[6]
+          df.cbn <- subset(df.na, df.na[,mvar] %in% c(basline,smvar1, smvar2,smvar3,smvar4,smvar5)) 
         }else{
-          print("combination should be 2, 3, 4 and 5 only.")
+          print("combination should be 2, 3, 4, 5, and 6 only.")
           break
         }
         
@@ -213,6 +221,9 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
                 test.name <- "Pairwise Wilcoxon"
               }
             } 
+          }else{
+            test.name<-NULL
+            pval <- NULL
           }
 
   
@@ -242,7 +253,10 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
           }
           
           # control statistic on the plot
-          if(test.name == "KW" | test.name == "ANOVA"){
+          
+          if(is.null(test.name)){
+            p1 <- p1 
+          } else if(test.name == "KW" | test.name == "ANOVA"){
             if(pval < 0.05){
               if (statistics == "yes"| statistics == "YES"|statistics == "Yes"){
                 if (star == "no") {  
@@ -267,6 +281,8 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
               p1 <- p1 
             }
           }
+
+          
           
 
           
@@ -374,7 +390,11 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
               test.name <- "Pairwise Wilcoxon"
             }
           } 
+        }else{
+          test.name<-NULL
+          pval <- NULL
         }
+        
         
         p1 <- ggplot(df.na, aes_string(x=mvar, y=oc, colour=mvar))  + labs(y=oc, x=NULL) + 
           theme_bw() + theme(strip.background = element_blank()) +
@@ -395,17 +415,19 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
         if (!is.null(title)) {
           p1 <- p1 + ggtitle(sprintf("%s%s%s%s", title,
                                      ifelse(is.null(test.name), "", paste("\n",test.name, " ", sep = "")), 
-                                     ifelse(is.null(test.name), "", paste("p=", " ", sep = "")), 
+                                     ifelse(is.null(pval), "", paste("p=", " ", sep = "")), 
                                      ifelse(is.null(pval), "", paste(pval, " ", sep = "")), sep=""))
         } else{
           p1 <- p1 + ggtitle(sprintf("%s%s%s%s", mvar,
                                      ifelse(is.null(test.name), "", paste("\n",test.name, " ", sep = "")), 
-                                     ifelse(is.null(test.name), "", paste("p=", " ", sep = "")), 
+                                     ifelse(is.null(pval), "", paste("p=", " ", sep = "")), 
                                      ifelse(is.null(pval), "", paste(pval, " ", sep = "")), sep=""))
         }
         
         # control statistic on the plot
-        if(test.name == "KW" | test.name == "ANOVA"){
+        if(is.null(test.name)){
+          p1 <- p1 
+        } else if(test.name == "KW" | test.name == "ANOVA"){
           if(pval < 0.05){
             if (statistics == "yes"| statistics == "YES"|statistics == "Yes"){
               if (star == "no") {  
@@ -430,6 +452,7 @@ Go_boxplot <- function(df, cate.vars, project, outcomes,
             p1 <- p1 
           }
         }
+        
         
         
         # plot design

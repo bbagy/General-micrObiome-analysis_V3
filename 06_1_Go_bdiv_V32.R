@@ -12,6 +12,7 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
                     ID = NULL,  
                     facet=NULL, 
                     name=NULL, 
+                    addnumber=TRUE,
                     height, width){
     
   if(!is.null(dev.list())) dev.off()
@@ -158,9 +159,10 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
           pdataframe[,mvar] <- factor(pdataframe[,mvar], levels = orders)
 
 
-          # Add number of samples in the group
-          renamed_levels <- as.character(levels(pdataframe[,mvar]));renamed_levels
-          oldNames <- unique(pdataframe[,mvar]);oldNames
+           # Add number of samples in the group
+          if(addnumber==TRUE){
+              renamed_levels <- as.character(levels(pdataframe[,mvar]));renamed_levels
+              oldNames <- unique(pdataframe[,mvar]);oldNames
           if (length(renamed_levels) == 0) {
             renamed_levels <- oldNames
           }
@@ -170,7 +172,17 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
             levels(pdataframe[[mvar]])[levels(pdataframe[[mvar]])== name] <- new_n
             renamed_levels <- replace(renamed_levels, renamed_levels == name, new_n);renamed_levels
           }
+          }else{
+            pdataframe <- pdataframe
+          }
     
+
+
+
+
+
+
+
 
           # Plots
           p = ggplot(pdataframe, aes_string("Axis_1", "Axis_2", color=mvar))
@@ -179,10 +191,10 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
           if (!is.null(shapes)) {
             
             pdataframe[,shapes] <- factor(pdataframe[,shapes], levels = orders)
-            p = p +  geom_point(aes_string(shape=shapes), size=1, alpha = 1) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
+            p = p +  geom_point(aes_string(shape=shapes), size=0.8, alpha = 1) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
             
           }else{
-            p = p + geom_point(size=1, alpha = 1)+ ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
+            p = p + geom_point(size=0.8, alpha = 1)+ ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
           }
           
           p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
@@ -245,10 +257,6 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
           map.pair <- subset(mapping.sel.na.rem, mapping.sel.na.rem[,mvar] %in% unique(factors))
           
           # count to table
-          if (table(map.pair[,mvar])[1] <=2 | table(map.pair[,mvar])[2] <=2){
-            p=p
-            next
-          }
           
           if (!is.null(cate.conf)) {
             for(conf in cate.conf){
@@ -279,7 +287,14 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
           
           grob <- grobTree(textGrob(paste(distance_metric, "\nR2=",R2,"\nPERMANOVA p=",tmp$padj,sep=""), x=0.01,  y=0.15, hjust=0,
                                     gp=gpar(fontsize=8))) #, fontface="italic"
-          p = p + annotation_custom(grob)
+
+          
+          if (table(map.pair[,mvar])[1] <=2 | table(map.pair[,mvar])[2] <=2){
+            p=p
+          }else{
+            p = p + annotation_custom(grob)
+          }
+          
           
           
           #plotlist[[length(plotlist)+1]] <- p
@@ -333,18 +348,22 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
         
         pdataframe[,mvar] <- factor(pdataframe[,mvar], levels = orders)
         
-        # Add number of samples in the group
-        renamed_levels <- as.character(levels(pdataframe[,mvar]));renamed_levels
-        oldNames <- unique(pdataframe[,mvar]);oldNames
-        if (length(renamed_levels) == 0) {
-          renamed_levels <- oldNames
-        }
-        for (name in oldNames) {
-          total <- length(which(pdataframe[,mvar] == name));total
-          new_n <- paste(name, " (n=", total, ")", sep="");new_n
-          levels(pdataframe[[mvar]])[levels(pdataframe[[mvar]])== name] <- new_n
-          renamed_levels <- replace(renamed_levels, renamed_levels == name, new_n);renamed_levels
-        }
+           # Add number of samples in the group
+          if(addnumber==TRUE){
+              renamed_levels <- as.character(levels(pdataframe[,mvar]));renamed_levels
+              oldNames <- unique(pdataframe[,mvar]);oldNames
+          if (length(renamed_levels) == 0) {
+            renamed_levels <- oldNames
+          }
+          for (name in oldNames) {
+            total <- length(which(pdataframe[,mvar] == name));total
+            new_n <- paste(name, " (n=", total, ")", sep="");new_n
+            levels(pdataframe[[mvar]])[levels(pdataframe[[mvar]])== name] <- new_n
+            renamed_levels <- replace(renamed_levels, renamed_levels == name, new_n);renamed_levels
+          }
+          }else{
+            pdataframe <- pdataframe
+          }
         
         
         # Plots
@@ -353,10 +372,10 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
         
         if (!is.null(shapes)) {
           pdataframe[,shapes] <- factor(pdataframe[,shapes], levels = orders)
-          p = p +  geom_point(aes_string(shape=shapes), size=1, alpha = 1) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
+          p = p +  geom_point(aes_string(shape=shapes), size=0.8, alpha = 1) + scale_shape_manual(values = c(1, 16, 8, 0,15, 2,17,11, 10,12,3,4,5,6,7,8,9,13,14)) 
           
         }else{
-          p = p + geom_point(size=1, alpha = 1)+ ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
+          p = p + geom_point(size=0.8, alpha = 1)+ ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
         }
         
         p = p + ggtitle(sprintf("%s (%s)",mvar,distance_metric)) 
@@ -397,7 +416,7 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
         }
         
         #===================================#
-        # Add permanova for two combination #
+        # Add permanova                     #
         #===================================#
         set.seed(1)
         distance <- Go_dist(psIN = psIN.na, project = project, distance_metrics = distance_metric)
@@ -418,11 +437,6 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
         map.pair <- subset(mapping.sel.na.rem, mapping.sel.na.rem[,mvar] %in% unique(factors))
         
         # count to table
-        if (table(map.pair[,mvar])[1] <=2 | table(map.pair[,mvar])[2] <=2){
-          p  <-  p
-          next
-        }
-        
         
         if (!is.null(cate.conf)) {
           for(conf in cate.conf){
@@ -453,7 +467,14 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
         
         grob <- grobTree(textGrob(paste(distance_metric, "\nR2=",R2,"\nPERMANOVA p=",tmp$padj,sep=""), x=0.01,  y=0.15, hjust=0,
                                   gp=gpar(fontsize=8))) #, fontface="italic"
-        p = p + annotation_custom(grob)
+        
+        if (table(map.pair[,mvar])[1] <=2 | table(map.pair[,mvar])[2] <=2){
+          p=p
+        }else{
+          p = p + annotation_custom(grob)
+        }
+        
+        
         #plotlist[[length(plotlist)+1]] <- p
         print(p)
       }

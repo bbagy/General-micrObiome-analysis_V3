@@ -4,10 +4,10 @@
 packages <- c("ape", "car","cluster","CLME","compositions","cowplot","crayon", "caret","colorspace",
            "digest","data.table", "devtools","doParallel","ellipse", "emmeans","e1071",
            "gplots","ggplot2","grid","gridExtra","gplots","ggrepel",
-           "Hmisc","huge","irlba","igraph","irr","lme4","lmerTest",
+           "Hmisc","huge","irlba","igraph","irr","lme4","lmerTest","nnet",
            "Matrix","magrittr","MASS","missForest","nlme","phangorn","plot3D",
            "pheatmap","pkgconfig","plyr","parallel","pscl","plotly","rfUtilities",
-           "rlang","randomForest","readxl","RColorBrewer","ROCR","reshape","reshape2",
+           "rlang","randomForest","readxl","RColorBrewer","ROCR","reshape","reshape2","yarrr",
            "stringi","S4Vectors","tidyverse","vegan","VGAM") #"venneuler","ShortRead",
 # version 1
 #for (pack in packs){install.packages(sprintf("%s",pack))}
@@ -59,7 +59,7 @@ cat(blue("#--------------------------------------------------------------# \n"))
 cat(blue("#------       General analysis Of microbiome (Go)        ------# \n"))
 cat(blue("#------    Quick statistics and visualization tools      ------# \n"))
 cat(blue("#--------------------------------------------------------------# \n"))
-cat(red("                                      Version: Go_tools.3.2.5 \n"))
+cat(red("                                      Version: Go_tools.3.4.0 \n"))
 cat("                                              Write by Heekuk \n")
 cat(yellow("All the required packages were installed.\n"))
 cat(yellow("All the required packages were loaded.\n"))

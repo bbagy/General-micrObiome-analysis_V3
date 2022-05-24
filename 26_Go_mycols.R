@@ -19,7 +19,7 @@ library("yarrr")
     cat("Custum Colors2: cols2","\n", cols2, "\n","\n", sep=" ")
 
     cat("RColorBrewer:","\n", "Set3     Set2    Set1   Pastel2", "\n", "Pastel1  Paired  Dark2  Accent", "\n","\n", sep=" ")
-    cat("piratepal:","\n", "basel    pony    Xmen    decision    southpark", "\n", "google   eternal   evildead    usualsjspects   ohbrother", 
+    cat("piratepal:","\n", "basel    pony    Xmen    decision    southpark", "\n", "google   eternal   evildead    usualsuspects   ohbrother", 
     "\n", "appletv    brave    bugs    cars    nemo", "\n", "rat    up    espresso    ipod   info    info2","\n",sep=" ")
   }
   
@@ -74,7 +74,7 @@ library("yarrr")
     if(piratepal == "basel"){
       mycols <- piratepal(palette =piratepal)
     }else if(piratepal == "pony"){
-      mmycols <- piratepal(palette =piratepal)
+      mycols <- piratepal(palette =piratepal)
     }else if(piratepal == "Xmen"){
       mycols <- piratepal(palette =piratepal)
     }else if(piratepal == "decision"){
@@ -87,7 +87,7 @@ library("yarrr")
       mycols <- piratepal(palette =piratepal)
     }else if(piratepal== "evildead"){
       mycols <- piratepal(palette =piratepal)
-    }else if(piratepal== "usualsjspects"){
+    }else if(piratepal== "usualsuspects"){
       mycols <- piratepal(palette =piratepal)
     }else if(piratepal== "ohbrother"){
       mycols <- piratepal(palette =piratepal)

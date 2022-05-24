@@ -87,7 +87,7 @@ Go_lmem <- function(psIN, cate.vars, cate.conf=NULL, StudyID, project, pval=0.05
       genera <- agg[,taxanames[i]]
       
       agg <- agg[,-1]
-      agg <- normalizeByCols(agg)
+      #agg <- normalizeByCols(agg)
       rownames(agg) <- genera
       dim(agg)
       ftk <- names(which(unlist(apply(agg, 1, function(x) length(which(x>=nsamps_threshold)))) > ceiling(filt_threshold*ncol(agg))))
@@ -180,22 +180,26 @@ Go_lmem <- function(psIN, cate.vars, cate.conf=NULL, StudyID, project, pval=0.05
               next
             }else{
               mod <- lmer(form, data=df, control=lmerControl(check.nobs.vs.nlev = "ignore",check.nobs.vs.rankZ = "ignore",check.nobs.vs.nRE="ignore"))
+              # mod2 <- lmer(form, data=df)
             }
           }else{
             reg <- "GLM"
             form <- as.formula(sprintf("value ~ %s  %s", mvar, 
                                        ifelse(is.null(cate.conf), "", paste("+",setdiff(cate.conf, "SampleType"), collapse=""))));form
             print(form)
-            mod <- glm(form, data=df,  family = binomial(link='logit'))
+            #mod <- glm(form, data=df,  family = binomial(link='logit'))
+            #mod <- glm(form, data=df,  family = quasipoisson(link = "log"))
+            mod <- glm(form, data=df,  family = poisson(link = "log"))
+            #summary(mod)
+            # pchisq(summary(mod.over)$dispersion * mod.ori$df.residual, mod.ori$df.residual, lower.tail = FALSE) #과산포 test p < 0.05 
           }
             
 
 
           #exp(coef(mod))
-
           ## lmer에서 control=은 "number of levels of each grouping~~" 오류가 있을때만 사용한다.
           ##
-          # mod2 <- lmer(form, data=df)
+
           
           coef <- summary(mod)$coefficients
           coef <- coef[grep(mvar, rownames(coef)),,drop=F]
@@ -227,7 +231,7 @@ Go_lmem <- function(psIN, cate.vars, cate.conf=NULL, StudyID, project, pval=0.05
       
       res <- res[order(res$pvalue),]
       res.sel <- res
-      # res.sel <- as.data.frame(subset(res, pvalue < pval))
+      res.sel <- as.data.frame(subset(res, pvalue < pval))
       taxa_sig <- res.sel$taxa[1:dim(res.sel)[1]]; summary(taxa_sig)
       
       if(dim(res.sel)[1] == 0){

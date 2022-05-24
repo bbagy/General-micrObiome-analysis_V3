@@ -301,7 +301,7 @@ if(relative == T){
          if (!is.null(ncol)) {
          p <- p + facet_wrap(as.formula(sprintf("~ %s"  ,mvar)), scales = "free_x", ncol = ncol)  
          }else{
-         p <- p + facet_grid(as.formula(sprintf("~ %s"  ,mvar)), scales = "free_x", space = "free") 
+         p <- p + facet_grid(as.formula(sprintf("~ %s"  ,mvar)), scales = "free_x", space = "free_x") 
          }
 
         

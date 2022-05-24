@@ -3,7 +3,7 @@
 
 
 
-Go_DA <- function(psIN,  project, order,type="taxonomy", filter, taxanames=NULL, data_type = "other", 
+Go_DA <- function(psIN,  project, order, filter, taxanames=NULL, data_type = "other", 
                   cate.vars,  cate.conf=NULL, orders=NULL,
                   name=NULL, fdr=0.05){
 
@@ -188,10 +188,6 @@ Go_DA <- function(psIN,  project, order,type="taxonomy", filter, taxanames=NULL,
       #-- give taxa name --#
       res <- cbind(as(tmp, "data.frame"), as(tax_table(psIN)[rownames(tmp), ], "matrix"))
       print("pass3")
-      
-
-
-      if(type == "taxonomy"){
         taxaRanks <- c("Kingdon","Phylum","Class","Order","Family","Genus","Species")
         for(t in 2:length(taxaRanks)){
           
@@ -209,8 +205,7 @@ Go_DA <- function(psIN,  project, order,type="taxonomy", filter, taxanames=NULL,
             if (res[,taxaRanks[t]][i] == "s__" || res[,taxaRanks[t]][i] == "g__" || res[,taxaRanks[t]][i] == "f__" || res[,taxaRanks[t]][i] == "o__" || res[,taxaRanks[t]][i] == "c__"|| res[,taxaRanks[t]][i] == "p__"|| res[,taxaRanks[t]][i] == "__"){
               res[,taxaRanks[t]][i] <- ""
             }
-          }
-          
+          } 
         }
         
         
@@ -261,21 +256,6 @@ Go_DA <- function(psIN,  project, order,type="taxonomy", filter, taxanames=NULL,
             }
           }
         }
-      } else if(type == "bacmet"){
-        for(taxa in c("Gene",	"Organism",	"Compound",	"NCBI_annotation")){
-          res[,taxa] == "NA"
-          res[,taxa]<- as.character(res[,taxa])
-          res[,taxa][is.na(res[,taxa])] <- "__"
-          for(i in 1:length(res[,taxa])){
-            if (res[,taxa][i] == "s__" || res[,taxa][i] == "g__" || res[,taxa][i] == "f__" || res[,taxa][i] == "o__" || res[,taxa][i] == "c__"|| res[,taxa][i] == "p__"|| res[,taxa][i] == "__"){
-              res[,taxa][i] <- ""
-            }
-          }
-        }
-        print("pass4")
-        res$TaxaName <- paste(res$Compound,"",res$Gene,"",res$Organism)
-        res$ShortName <- paste(res$Compound,"",res$Gene,"",res$Organism)
-      }
       
       #--- give simple name to res---#
       #headers <- vector(dim(res)[2], mode="character")

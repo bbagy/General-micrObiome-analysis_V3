@@ -153,4 +153,5 @@ Go_DA_plot <- function(project, file_path,files, type="taxonomy", plot = "volcan
     print(p1)
      dev.off()
   } 
+  print("plot for volcano, maplot and forest")
 }

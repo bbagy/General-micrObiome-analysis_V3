@@ -38,10 +38,16 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
   }
   
   
-  ### log transformation
-  ps.top.rel <- transform_sample_counts(ps.top, function(x) x / log2(x)) # log(1+x) 를 하면 NaN가 많이 나온다.
+  ### decide for  log transformation
   
-  tab = data.frame(otu_table(ps.top.rel))
+  if( max(data.frame(otu_table(ps.top))) < 1){
+    ps.top.rel <- ps.top
+  }else{
+    ps.top.rel <- transform_sample_counts(ps.top, function(x) x / log2(x)) # log(1+x) 를 하면 NaN가 많이 나온다. 
+  }
+
+  
+  tab <- data.frame(otu_table(ps.top.rel));head(tab)
   
   nsamps_threshold <- 0.01 # fraction of relabund to call a sample positive
   filt_threshold <- 0.1 # fraction of samples that need to be positive to keep an OTU for association testing
@@ -57,8 +63,8 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
   funcNames <- agg$func
   agg <- agg[,-1]
   rownames(agg) <- funcNames
-  ftk <- names(which(unlist(apply(agg, 1, function(x) length(which(x>=nsamps_threshold)))) > ceiling(filt_threshold*ncol(agg))))
-  agg <- agg[intersect(ftk,ftk),]
+  #ftk <- names(which(unlist(apply(agg, 1, function(x) length(which(x>=nsamps_threshold)))) > ceiling(filt_threshold*ncol(agg))))
+  # agg <- agg[intersect(ftk,ftk),]
   agg$Taxa <- rownames(agg)
   # agg_t <- t(agg)
   
@@ -140,7 +146,7 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
   
   df.sel.melt.clean <- df.sel.melt.clean[order(df.sel.melt.clean$variable ,  decreasing = F), ]
   
-  
+  print(unique(df.sel.melt.clean$variable))
   p <- ggplot(df.sel.melt.clean, aes_string(x="variable", y="value", fill=mainGroup)) +  geom_boxplot(outlier.shape = NA,lwd=0.3) + 
     theme_bw() + theme(strip.background = element_blank()) + 
     labs(y="Relative abundance (log2)", x= NULL) + ggtitle(sprintf("kruskal wallis p < %s",cutoff))
