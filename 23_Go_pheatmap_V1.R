@@ -236,11 +236,9 @@ print("Check the psIN")
     group2.col <- head(brewer.pal(12, "Paired"),length(unique(mapping.sel[,group2])))
     names(group2.col) <- unique(mapping.sel[,group2])
     
-    group3.col <- c("#B15928", "#FFFF99", "#6A3D9A", "#CAB2D6", "#FF7F00", "#FDBF6F", "#E31A1C", "#FB9A99", "#33A02C", "#B2DF8A", "#1F78B4", "#A6CEE3", "#1170aa", "#fc7d0b", "#76B7B2", "#B07AA1", "#E15759", "#59A14F", "#EDC948", "#FF9DA7", "#9C755F","#BAB0AC","#C84248")
-    
-    mycols <- piratepal(palette ="info2")
-    cols <- as.data.frame(mycols)
-    mycols <- cols$mycols
+    col3 <- c("#B15928", "#FFFF99", "#6A3D9A", "#CAB2D6", "#FF7F00", "#FDBF6F", "#E31A1C", "#FB9A99", "#33A02C", "#B2DF8A", "#1F78B4", "#A6CEE3", "#1170aa", "#fc7d0b", "#76B7B2", "#B07AA1", "#E15759", "#59A14F", "#EDC948", "#FF9DA7", "#9C755F","#BAB0AC","#C84248")
+    group3.col <- head(col3,length(unique(mapping.sel[,group3])))
+    names(group3.col) <- unique(mapping.sel[,group3])
     
     # color list
     if(type == "taxonomy" | type == "taxanomy" ){
@@ -286,7 +284,8 @@ print("Check the psIN")
     group2.col <- head(brewer.pal(12, "Paired"),length(unique(mapping.sel[,group2])))
     names(group2.col) <- unique(mapping.sel[,group2])
     
-    group3.col <- c("#B15928", "#FFFF99", "#6A3D9A", "#CAB2D6", "#FF7F00", "#FDBF6F", "#E31A1C", "#FB9A99", "#33A02C", "#B2DF8A", "#1F78B4", "#A6CEE3", "#1170aa", "#fc7d0b", "#76B7B2", "#B07AA1", "#E15759", "#59A14F", "#EDC948", "#FF9DA7", "#9C755F","#BAB0AC","#C84248")
+    col3 <- c("#B15928", "#FFFF99", "#6A3D9A", "#CAB2D6", "#FF7F00", "#FDBF6F", "#E31A1C", "#FB9A99", "#33A02C", "#B2DF8A", "#1F78B4", "#A6CEE3", "#1170aa", "#fc7d0b", "#76B7B2", "#B07AA1", "#E15759", "#59A14F", "#EDC948", "#FF9DA7", "#9C755F","#BAB0AC","#C84248")
+    group3.col <- head(col3,length(unique(mapping.sel[,group3])))
     names(group3.col) <- unique(mapping.sel[,group3])
     
     group4.col <- head(rev(brewer.pal(8, "Dark2")),length(unique(mapping.sel[,group4])))
@@ -362,18 +361,14 @@ print("Check the psIN")
   colSums(matrix)
   
   bk <- c(0,0.5,1)
-
-
-print("p0")
-
-tt<-try(ComplexHeatmap::pheatmap(matrix, annotation_col = annotation_col),T)
-if (class(tt) == "try-error"){
-  matrix <- t(matrix)
-}else{
-  matrix <- matrix
-}
-
-
+  print("p0")
+  
+  tt<-try(ComplexHeatmap::pheatmap(matrix, annotation_col = annotation_col),T)
+  if (class(tt) == "try-error"){
+    matrix <- t(matrix)
+  }else{
+    matrix <- matrix
+  }
 
   if (showPhylum ==TRUE){
     print("with annotation_row")
@@ -411,6 +406,9 @@ if (class(tt) == "try-error"){
                                   labels_row=taxaTab$Rank,
                                   cutree_rows = cutree_rows, cutree_cols = cutree_cols,
                                   annotation_colors = ann_colors)
+    
+    
+
       print("p3")
   }
 

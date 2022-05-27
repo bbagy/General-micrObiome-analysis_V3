@@ -3,7 +3,7 @@
 ##############################################
 packages <- c("ape", "car","cluster","CLME","compositions","cowplot","crayon", "caret","colorspace",
            "digest","data.table", "devtools","doParallel","ellipse", "emmeans","e1071",
-           "gplots","ggplot2","grid","gridExtra","gplots","ggrepel",
+           "gplots","ggplot2","grid","gridExtra","gplots","ggrepel","doRNG",
            "Hmisc","huge","irlba","igraph","irr","lme4","lmerTest","nnet",
            "Matrix","magrittr","MASS","missForest","nlme","phangorn","plot3D",
            "pheatmap","pkgconfig","plyr","parallel","pscl","plotly","rfUtilities",
@@ -33,7 +33,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 
 bioconductors <- c("phyloseq","microbiome","ANCOMBC","Rhtslib","genefilter","dada2","DESeq2", "dplyr","ggpubr","ggfortify", "ggpmisc",
-                   "illuminaio","msa","rstatix","useful","DECIPHER")
+                   "illuminaio","msa","rstatix","useful","DECIPHER","ComplexHeatmap")
 
 # 
 
@@ -59,7 +59,7 @@ cat(blue("#--------------------------------------------------------------# \n"))
 cat(blue("#------       General analysis Of microbiome (Go)        ------# \n"))
 cat(blue("#------    Quick statistics and visualization tools      ------# \n"))
 cat(blue("#--------------------------------------------------------------# \n"))
-cat(red("                                      Version: Go_tools.3.4.0 \n"))
+cat(red("                                      Version: Go_tools.3.4.2 \n"))
 cat("                                              Write by Heekuk \n")
 cat(yellow("All the required packages were installed.\n"))
 cat(yellow("All the required packages were loaded.\n"))
@@ -1852,13 +1852,13 @@ Go_clme <- function(psIN, cate.vars, project, paired, mycols=NULL, node, decreas
 #' @export
 #' @examples
 
-Go_linear <- function(df, cont.vars, project, outcomes, 
+Go_linear <- function(df, cont.vars, project, outcomes, method="lm",
                       mycols =NULL, maingroup=NULL, orders=NULL, name=NULL, 
                       height, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
-
+print("Method option: glm, lm, loess, gam")
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out)) dir.create(out)
@@ -1881,8 +1881,9 @@ Go_linear <- function(df, cont.vars, project, outcomes,
     print("orders is not defined.")
     orders <- NULL
   }
-  pdf(sprintf("%s/linear.%s.%s.%s.%s.pdf", out_path, 
+  pdf(sprintf("%s/linear.%s.%s.%s%s%s.pdf", out_path, 
               project, 
+              method,
               ifelse(is.null(maingroup), "", paste(maingroup, ".", sep = "")), 
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
@@ -1890,7 +1891,7 @@ Go_linear <- function(df, cont.vars, project, outcomes,
   
 
   my.formula <- y ~ x
-  my.method <- "lm"
+
   
   # plot
   plotlist <- list()
@@ -1953,19 +1954,28 @@ Go_linear <- function(df, cont.vars, project, outcomes,
         
       }
       
-     p <- p + theme_classic() + geom_point(size = 0.5) + 
+     p <- p + theme_classic() + geom_point(size = 0.5)
        # scale_colour_brewer(palette = colorset) + 
-        geom_smooth(method = my.method, formula = my.formula, linetype="solid", fill="lightgrey", se=T, size=0.5 ) + 
-        ggtitle(sprintf("%s with %s", mvar, outcomes[i])) + theme(title=element_text(size=10)) + labs(x = NULL)+
-        theme(title=element_text(size=10),
-              axis.text.x = element_text(color = "grey20", size = 10, angle = 0, hjust = .5, vjust = .5, face = "plain"),
-              axis.text.y = element_text(color = "grey20", size = 12, angle = 0, hjust = 1, vjust = 0, face = "plain")) +
-        #stat_poly_eq(formula = my.formula, aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),  parse = TRUE, size = 3) +
-        stat_fit_glance(method.args = list(formula = my.formula), method = my.method, 
-                        #geom = 'text', 공식이 한쪽으로 정리가 되지 않고, 라인에 수치가 붙는다.
-                        aes(label = sprintf('r^2~"="~%.3f~~italic(P)~"="~%.2g', 
-                                            stat(r.squared), stat(p.value))),
-                        parse = TRUE, size = 3)
+
+       if(method == "glm"){
+         p <- p + geom_smooth(method = method, formula = my.formula, linetype="solid", fill="lightgrey", se=T, size=0.5, method.args = list(family = "poisson"))   #method.args = list(family = "poisson")
+       }else if(method == "lm"){
+         p <- p + geom_smooth(method = method, formula = my.formula, linetype="solid", fill="lightgrey", se=T, size=0.5) + 
+           #stat_poly_eq(formula = my.formula, aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),  parse = TRUE, size = 3) +
+           stat_fit_glance(method.args = list(formula = my.formula), method = method, 
+                           #geom = 'text', 공식이 한쪽으로 정리가 되지 않고, 라인에 수치가 붙는다.
+                           aes(label = sprintf('r^2~"="~%.3f~~italic(P)~"="~%.2g', 
+                                               stat(r.squared), stat(p.value))), 
+                           parse = TRUE, size = 3)
+       }else{
+         p <- p + geom_smooth(method = method, formula = my.formula, linetype="solid", fill="lightgrey", se=T, size=0.5)
+       }
+     
+     p <- p + ggtitle(sprintf("%s with %s", mvar, outcomes[i])) + theme(title=element_text(size=10)) + labs(x = NULL)+
+       theme(title=element_text(size=10),
+             axis.text.x = element_text(color = "grey20", size = 10, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+             axis.text.y = element_text(color = "grey20", size = 12, angle = 0, hjust = 1, vjust = 0, face = "plain"))
+     
       
       if(!is.null(mycols)){
         p <- p + scale_color_manual(values = mycols)
@@ -2031,162 +2041,165 @@ Go_regression <- function(data, project,
   #----------------------------------------------------#
   set.seed(1)
   for (outcome in outcomes){
-    if (class(outcome) == "character") {
-      data[,outcome] <- factor(data[,outcome])
-      data[,outcome] <- factor(data[,outcome], levels = intersect(orders, data[,outcome]))
+    if (length(unique(data[,outcome])) > 3){
       
-      # NA 제거
-      data[,outcome] <- as.character(data[[outcome]]);data[,outcome]
-      data[,outcome][data[,outcome]==""] <- "NA";data[,outcome]
-      #data.na <- subset(data, data[,outcome] != "NA");data.na[,outcome]  # subset 를 사용한 NA 삭제
-      # set the baseline for outcome
-
-      if(length(unique(data[,outcome])) == 2){
-        
+      
+      
+    }else{
+      if (class(outcome) == "character") {
         data[,outcome] <- factor(data[,outcome])
-        out <- levels(data[,outcome])[1]
+        data[,outcome] <- factor(data[,outcome], levels = intersect(orders, data[,outcome]))
         
-
-        data[,outcome] <- factor(ifelse(data[,outcome]== levels(data[,outcome])[1],0,1), levels=c(0,1), 
-                               labels = levels(data[,outcome]))
+        # NA 제거
+        data[,outcome] <- as.character(data[[outcome]]);data[,outcome]
+        data[,outcome][data[,outcome]==""] <- "NA";data[,outcome]
+        #data.na <- subset(data, data[,outcome] != "NA");data.na[,outcome]  # subset 를 사용한 NA 삭제
+        # set the baseline for outcome
         
-        
-        print(levels(data[,outcome]))
-      }
-    } else if (class(outcome)  == "numeric") {
-      
-      # NA 제거
-      data[,outcome] <- as.character(data[[outcome]]);data[,outcome]
-      data[,outcome][data[,outcome]==""] <- "NA";data[,outcome]
-      # data <- subset(data, data[,mvar] != "NA");data[,outcome]  # subset 를 사용한 NA 삭제
-      data[,outcome] <- as.numeric(as.character(data[[outcome]]))
-      
-      data[,outcome] <- as.numeric(data[,outcome])
-    } 
-    
-    res <- {}
-    
-    for (mvar in uni.vars) {
-      if (outcome == mvar) {
-        next
-      }
-      
-     # print(sprintf("##-- %s (total without NA: %s/%s) --##", 
-      #              mvar, dim(data.na)[1], dim(data)[1]))
-      
-      if (length(unique(data[,mvar])) ==1) {
-        next
-      }
-      
-      # get formula
-      if(!is.null(uni.vars) & is.null(mul.vars) & is.null(interaction)){
-        form <- as.formula(sprintf("%s ~ %s", outcome, mvar))
-        print("Univariate anaysis")
-        type <- "uni"
-      } else if (!is.null(mul.vars)){
-        if (!is.null(interaction)){
-          mul.vars.interaction <- c(mul.vars, interaction)
-          form <- as.formula(sprintf("%s ~ %s", outcome, paste(setdiff(mul.vars.interaction, "SampleType"), collapse="+")))
-          print("Multivariate anaysis")
-          type <- "multi-interantion"
-
-        }else{
-          form <- as.formula(sprintf("%s ~ %s", outcome, paste(setdiff(mul.vars, "SampleType"), collapse="+")))
+        if(length(unique(data[,outcome])) == 2){
           
-          print("Multivariate anaysis with interaction effect")
-          type <- "multi"
+          data[,outcome] <- factor(data[,outcome])
+          out <- levels(data[,outcome])[1]
+          
+          
+          data[,outcome] <- factor(ifelse(data[,outcome]== levels(data[,outcome])[1],0,1), levels=c(0,1), 
+                                   labels = levels(data[,outcome]))
+          
+          
+          print(levels(data[,outcome]))
         }
+      } else if (class(outcome)  == "numeric") {
+        
+        # NA 제거
+        data[,outcome] <- as.character(data[[outcome]]);data[,outcome]
+        data[,outcome][data[,outcome]==""] <- "NA";data[,outcome]
+        # data <- subset(data, data[,mvar] != "NA");data[,outcome]  # subset 를 사용한 NA 삭제
+        data[,outcome] <- as.numeric(as.character(data[[outcome]]))
+        
+        data[,outcome] <- as.numeric(data[,outcome])
       } 
       
-      print(form)
+      res <- {}
       
-
-      # model
-      if (class(data[,outcome]) == "numeric"){
-        m <- "Regression (glm-poisson)"
-        mod <- glm(form, data=data,  family = poisson(link='log'))
-      } else if (length(unique(data[,outcome])) == 2){
-        m <- "Logistic regression (glm-binomial)"
-        mod <- glm(form, data=data,  family=binomial("logit"))
-      } else if (length(unique(data[,outcome])) > 3){
-        m <- "Multinomial logistic regression"
-        mod <- multinom(form, data=data)
-      }
-
-      print(m)
-
-
-      # out for the model
-      coef <- as.data.frame(summary(mod)$coefficients)
-      coef <- coef[setdiff(rownames(coef), "(Intercept)"),,drop=F]
-      colnames(coef) <- c("Estimate", "SE", "t", "pval")
-
-      if (dim(coef)[1] == 0){
-        next
-      }
-      
-
-      
-      # out for the confidence interval 
-      conf <- data.frame(confint(mod))
-      conf <- conf[setdiff(rownames(conf), "(Intercept)"),,drop=F]
-      conf.na <- na.omit(conf) 
-      
-      coef$`2.5 %` <- conf.na$`2.5 %`
-      coef$`97.5 %` <- conf.na$`97.5 %`
-
-      coef$outcome <- outcome
-      coef$mvar <- mvar
-      coef$model <- m
-      coef$deviance <- pchisq(q=mod$null.deviance-mod$deviance,df=mod$df.null-mod$df.residual, lower.tail = FALSE)
-      
-      # get formula
-      if (!is.null(mul.vars)){
-        if (!is.null(interaction)){
-          mul.vars.interaction <- c(mul.vars, interaction)
-          mul.inter.form <- sprintf("%s ~ %s", outcome, paste(setdiff(mul.vars.interaction, "SampleType"), collapse="+"))
-          coef$formula <- mul.inter.form
-        }else{
-          mul.form <- sprintf("%s ~ %s", outcome, paste(setdiff(mul.vars, "SampleType"), collapse="+"))
-          coef$formula <- mul.form
+      for (mvar in uni.vars) {
+        
+        if (outcome == mvar) {
+          next
         }
-      } else{
+        
+        # print(sprintf("##-- %s (total without NA: %s/%s) --##", 
+        #              mvar, dim(data.na)[1], dim(data)[1]))
+        
+        if (length(unique(data[,mvar])) ==1) {
+          next
+        }
+        
+        # get formula
+        if(!is.null(uni.vars) & is.null(mul.vars) & is.null(interaction)){
+          form <- as.formula(sprintf("%s ~ %s", outcome, mvar))
+          print("Univariate anaysis")
+          type <- "uni"
+        } else if (!is.null(mul.vars)){
+          if (!is.null(interaction)){
+            mul.vars.interaction <- c(mul.vars, interaction)
+            form <- as.formula(sprintf("%s ~ %s", outcome, paste(setdiff(mul.vars.interaction, "SampleType"), collapse="+")))
+            print("Multivariate anaysis")
+            type <- "multi-interantion"
+            
+          }else{
+            form <- as.formula(sprintf("%s ~ %s", outcome, paste(setdiff(mul.vars, "SampleType"), collapse="+")))
+            
+            print("Multivariate anaysis with interaction effect")
+            type <- "multi"
+          }
+        } 
+        
+        print(form)
+        
+        
+        # model
+        if (class(data[,outcome]) == "numeric"){
+          m <- "Regression (glm-poisson)"
+          mod <- glm(form, data=data,  family = poisson(link='log'))
+        } else if (length(unique(data[,outcome])) == 2){
+          m <- "Logistic regression (glm-binomial)"
+          mod <- glm(form, data=data,  family=binomial("logit"))
+        } 
+        print(m)
+        
+        
+        # out for the model
+        coef <- as.data.frame(summary(mod)$coefficients)
+        coef <- coef[setdiff(rownames(coef), "(Intercept)"),,drop=F]
+        colnames(coef) <- c("Estimate", "SE", "t", "pval")
+        
+        if (dim(coef)[1] == 0){
+          next
+        }
+        
+        
+        
+        # out for the confidence interval 
+        conf <- data.frame(confint(mod))
+        conf <- conf[setdiff(rownames(conf), "(Intercept)"),,drop=F]
+        conf.na <- na.omit(conf) 
+        
+        coef$`2.5 %` <- conf.na$`2.5 %`
+        coef$`97.5 %` <- conf.na$`97.5 %`
+        
+        coef$outcome <- outcome
         coef$mvar <- mvar
+        coef$model <- m
+        coef$deviance <- pchisq(q=mod$null.deviance-mod$deviance,df=mod$df.null-mod$df.residual, lower.tail = FALSE)
+        
+        # get formula
+        if (!is.null(mul.vars)){
+          if (!is.null(interaction)){
+            mul.vars.interaction <- c(mul.vars, interaction)
+            mul.inter.form <- sprintf("%s ~ %s", outcome, paste(setdiff(mul.vars.interaction, "SampleType"), collapse="+"))
+            coef$formula <- mul.inter.form
+          }else{
+            mul.form <- sprintf("%s ~ %s", outcome, paste(setdiff(mul.vars, "SampleType"), collapse="+"))
+            coef$formula <- mul.form
+          }
+        } else{
+          coef$mvar <- mvar
+        }
+        
+        
+        res <- rbind(res, coef)
+        
+        
+        # stop looing for multivariate analysis
+        if(!is.null(mul.vars) | !is.null(interaction)){
+          break
+        }
       }
       
-
-      res <- rbind(res, coef)
       
+      res$padj <- p.adjust(res$pval, method="fdr")
+      #res <- res[order(res$time_point),]
+      res$comp <- factor(rownames(res), levels=rownames(res))
+      res$dir <- ifelse(res$pval < pvalue, ifelse(sign(res$Estimate)==1, "up", "down"), "NS")
       
-      # stop looing for multivariate analysis
+      print(res)
+      
+      write.csv(res, quote = FALSE, col.names = NA,file=sprintf("%s/regression_%s.%s.%s.%s%s.csv",out_table,
+                                                                project,
+                                                                outcome,
+                                                                type,
+                                                                ifelse(is.null(name), "", paste(name, ".", sep = "")),  
+                                                                format(Sys.Date(), "%y%m%d"), sep="/"))
+      # return model
       if(!is.null(mul.vars) | !is.null(interaction)){
-        break
+        saveRDS(mod,sprintf("%s/regression_%s.%s.%s.%s%s.rds",out_table,
+                            project,
+                            outcome,
+                            type,
+                            ifelse(is.null(name), "", paste(name, ".", sep = "")),  
+                            format(Sys.Date(), "%y%m%d"), sep="/")) 
+        
       }
-    }
-    
-
-    res$padj <- p.adjust(res$pval, method="fdr")
-    #res <- res[order(res$time_point),]
-    res$comp <- factor(rownames(res), levels=rownames(res))
-    res$dir <- ifelse(res$pval < pvalue, ifelse(sign(res$Estimate)==1, "up", "down"), "NS")
-    
-    print(res)
-    
-    write.csv(res, quote = FALSE, col.names = NA,file=sprintf("%s/regression_%s.%s.%s.%s%s.csv",out_table,
-                                                             project,
-                                                             outcome,
-                                                             type,
-                                                             ifelse(is.null(name), "", paste(name, ".", sep = "")),  
-                                                             format(Sys.Date(), "%y%m%d"), sep="/"))
-    # return model
-    if(!is.null(mul.vars) | !is.null(interaction)){
-      saveRDS(mod,sprintf("%s/regression_%s.%s.%s.%s%s.rds",out_table,
-                         project,
-                         outcome,
-                         type,
-                         ifelse(is.null(name), "", paste(name, ".", sep = "")),  
-                         format(Sys.Date(), "%y%m%d"), sep="/")) 
-      
     }
   }
 }
@@ -7066,11 +7079,9 @@ print("Check the psIN")
     group2.col <- head(brewer.pal(12, "Paired"),length(unique(mapping.sel[,group2])))
     names(group2.col) <- unique(mapping.sel[,group2])
     
-    group3.col <- c("#B15928", "#FFFF99", "#6A3D9A", "#CAB2D6", "#FF7F00", "#FDBF6F", "#E31A1C", "#FB9A99", "#33A02C", "#B2DF8A", "#1F78B4", "#A6CEE3", "#1170aa", "#fc7d0b", "#76B7B2", "#B07AA1", "#E15759", "#59A14F", "#EDC948", "#FF9DA7", "#9C755F","#BAB0AC","#C84248")
-    
-    mycols <- piratepal(palette ="info2")
-    cols <- as.data.frame(mycols)
-    mycols <- cols$mycols
+    col3 <- c("#B15928", "#FFFF99", "#6A3D9A", "#CAB2D6", "#FF7F00", "#FDBF6F", "#E31A1C", "#FB9A99", "#33A02C", "#B2DF8A", "#1F78B4", "#A6CEE3", "#1170aa", "#fc7d0b", "#76B7B2", "#B07AA1", "#E15759", "#59A14F", "#EDC948", "#FF9DA7", "#9C755F","#BAB0AC","#C84248")
+    group3.col <- head(col3,length(unique(mapping.sel[,group3])))
+    names(group3.col) <- unique(mapping.sel[,group3])
     
     # color list
     if(type == "taxonomy" | type == "taxanomy" ){
@@ -7116,7 +7127,8 @@ print("Check the psIN")
     group2.col <- head(brewer.pal(12, "Paired"),length(unique(mapping.sel[,group2])))
     names(group2.col) <- unique(mapping.sel[,group2])
     
-    group3.col <- c("#B15928", "#FFFF99", "#6A3D9A", "#CAB2D6", "#FF7F00", "#FDBF6F", "#E31A1C", "#FB9A99", "#33A02C", "#B2DF8A", "#1F78B4", "#A6CEE3", "#1170aa", "#fc7d0b", "#76B7B2", "#B07AA1", "#E15759", "#59A14F", "#EDC948", "#FF9DA7", "#9C755F","#BAB0AC","#C84248")
+    col3 <- c("#B15928", "#FFFF99", "#6A3D9A", "#CAB2D6", "#FF7F00", "#FDBF6F", "#E31A1C", "#FB9A99", "#33A02C", "#B2DF8A", "#1F78B4", "#A6CEE3", "#1170aa", "#fc7d0b", "#76B7B2", "#B07AA1", "#E15759", "#59A14F", "#EDC948", "#FF9DA7", "#9C755F","#BAB0AC","#C84248")
+    group3.col <- head(col3,length(unique(mapping.sel[,group3])))
     names(group3.col) <- unique(mapping.sel[,group3])
     
     group4.col <- head(rev(brewer.pal(8, "Dark2")),length(unique(mapping.sel[,group4])))
@@ -7192,18 +7204,14 @@ print("Check the psIN")
   colSums(matrix)
   
   bk <- c(0,0.5,1)
-
-
-print("p0")
-
-tt<-try(ComplexHeatmap::pheatmap(matrix, annotation_col = annotation_col),T)
-if (class(tt) == "try-error"){
-  matrix <- t(matrix)
-}else{
-  matrix <- matrix
-}
-
-
+  print("p0")
+  
+  tt<-try(ComplexHeatmap::pheatmap(matrix, annotation_col = annotation_col),T)
+  if (class(tt) == "try-error"){
+    matrix <- t(matrix)
+  }else{
+    matrix <- matrix
+  }
 
   if (showPhylum ==TRUE){
     print("with annotation_row")
@@ -7241,6 +7249,9 @@ if (class(tt) == "try-error"){
                                   labels_row=taxaTab$Rank,
                                   cutree_rows = cutree_rows, cutree_cols = cutree_cols,
                                   annotation_colors = ann_colors)
+    
+    
+
       print("p3")
   }
 

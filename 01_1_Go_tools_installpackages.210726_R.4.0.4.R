@@ -3,7 +3,7 @@
 ##############################################
 packages <- c("ape", "car","cluster","CLME","compositions","cowplot","crayon", "caret","colorspace",
            "digest","data.table", "devtools","doParallel","ellipse", "emmeans","e1071",
-           "gplots","ggplot2","grid","gridExtra","gplots","ggrepel",
+           "gplots","ggplot2","grid","gridExtra","gplots","ggrepel","doRNG",
            "Hmisc","huge","irlba","igraph","irr","lme4","lmerTest","nnet",
            "Matrix","magrittr","MASS","missForest","nlme","phangorn","plot3D",
            "pheatmap","pkgconfig","plyr","parallel","pscl","plotly","rfUtilities",
@@ -33,7 +33,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 
 bioconductors <- c("phyloseq","microbiome","ANCOMBC","Rhtslib","genefilter","dada2","DESeq2", "dplyr","ggpubr","ggfortify", "ggpmisc",
-                   "illuminaio","msa","rstatix","useful","DECIPHER")
+                   "illuminaio","msa","rstatix","useful","DECIPHER","ComplexHeatmap")
 
 # 
 
@@ -59,7 +59,7 @@ cat(blue("#--------------------------------------------------------------# \n"))
 cat(blue("#------       General analysis Of microbiome (Go)        ------# \n"))
 cat(blue("#------    Quick statistics and visualization tools      ------# \n"))
 cat(blue("#--------------------------------------------------------------# \n"))
-cat(red("                                      Version: Go_tools.3.4.0 \n"))
+cat(red("                                      Version: Go_tools.3.4.2 \n"))
 cat("                                              Write by Heekuk \n")
 cat(yellow("All the required packages were installed.\n"))
 cat(yellow("All the required packages were loaded.\n"))

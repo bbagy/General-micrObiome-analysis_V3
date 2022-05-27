@@ -6,13 +6,13 @@
 #' @export
 #' @examples
 
-Go_linear <- function(df, cont.vars, project, outcomes, 
+Go_linear <- function(df, cont.vars, project, outcomes, method="lm",
                       mycols =NULL, maingroup=NULL, orders=NULL, name=NULL, 
                       height, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
-
+print("Method option: glm, lm, loess, gam")
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out)) dir.create(out)
@@ -35,8 +35,9 @@ Go_linear <- function(df, cont.vars, project, outcomes,
     print("orders is not defined.")
     orders <- NULL
   }
-  pdf(sprintf("%s/linear.%s.%s.%s.%s.pdf", out_path, 
+  pdf(sprintf("%s/linear.%s.%s.%s%s%s.pdf", out_path, 
               project, 
+              method,
               ifelse(is.null(maingroup), "", paste(maingroup, ".", sep = "")), 
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
@@ -44,7 +45,7 @@ Go_linear <- function(df, cont.vars, project, outcomes,
   
 
   my.formula <- y ~ x
-  my.method <- "lm"
+
   
   # plot
   plotlist <- list()
@@ -107,19 +108,28 @@ Go_linear <- function(df, cont.vars, project, outcomes,
         
       }
       
-     p <- p + theme_classic() + geom_point(size = 0.5) + 
+     p <- p + theme_classic() + geom_point(size = 0.5)
        # scale_colour_brewer(palette = colorset) + 
-        geom_smooth(method = my.method, formula = my.formula, linetype="solid", fill="lightgrey", se=T, size=0.5 ) + 
-        ggtitle(sprintf("%s with %s", mvar, outcomes[i])) + theme(title=element_text(size=10)) + labs(x = NULL)+
-        theme(title=element_text(size=10),
-              axis.text.x = element_text(color = "grey20", size = 10, angle = 0, hjust = .5, vjust = .5, face = "plain"),
-              axis.text.y = element_text(color = "grey20", size = 12, angle = 0, hjust = 1, vjust = 0, face = "plain")) +
-        #stat_poly_eq(formula = my.formula, aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),  parse = TRUE, size = 3) +
-        stat_fit_glance(method.args = list(formula = my.formula), method = my.method, 
-                        #geom = 'text', 공식이 한쪽으로 정리가 되지 않고, 라인에 수치가 붙는다.
-                        aes(label = sprintf('r^2~"="~%.3f~~italic(P)~"="~%.2g', 
-                                            stat(r.squared), stat(p.value))),
-                        parse = TRUE, size = 3)
+
+       if(method == "glm"){
+         p <- p + geom_smooth(method = method, formula = my.formula, linetype="solid", fill="lightgrey", se=T, size=0.5, method.args = list(family = "poisson"))   #method.args = list(family = "poisson")
+       }else if(method == "lm"){
+         p <- p + geom_smooth(method = method, formula = my.formula, linetype="solid", fill="lightgrey", se=T, size=0.5) + 
+           #stat_poly_eq(formula = my.formula, aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),  parse = TRUE, size = 3) +
+           stat_fit_glance(method.args = list(formula = my.formula), method = method, 
+                           #geom = 'text', 공식이 한쪽으로 정리가 되지 않고, 라인에 수치가 붙는다.
+                           aes(label = sprintf('r^2~"="~%.3f~~italic(P)~"="~%.2g', 
+                                               stat(r.squared), stat(p.value))), 
+                           parse = TRUE, size = 3)
+       }else{
+         p <- p + geom_smooth(method = method, formula = my.formula, linetype="solid", fill="lightgrey", se=T, size=0.5)
+       }
+     
+     p <- p + ggtitle(sprintf("%s with %s", mvar, outcomes[i])) + theme(title=element_text(size=10)) + labs(x = NULL)+
+       theme(title=element_text(size=10),
+             axis.text.x = element_text(color = "grey20", size = 10, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+             axis.text.y = element_text(color = "grey20", size = 12, angle = 0, hjust = 1, vjust = 0, face = "plain"))
+     
       
       if(!is.null(mycols)){
         p <- p + scale_color_manual(values = mycols)
