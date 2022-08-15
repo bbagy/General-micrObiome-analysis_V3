@@ -1,6 +1,8 @@
 #' A Go_deseq2_heat
 #' 
-Go_DA_heat <- function(df, project, data_type, facet,groupby,font, fdr,fc, orders, name, height, width){
+Go_DA_heat <- function(df, project, data_type, facet,groupby,font, 
+                       addnumber=TRUE,
+                       fdr,fc, orders, name, height, width){
     
   if(!is.null(dev.list())) dev.off()
    
@@ -42,36 +44,43 @@ Go_DA_heat <- function(df, project, data_type, facet,groupby,font, fdr,fc, order
   
   if (dim(resSig)[1] >= 1) {
     # re-order
-    if (length(orders) >= 1) {
-      if (groupby == "smvar"){
-        resSig.top$smvar <- factor(resSig.top$smvar, levels = orders)
-        #resSig.top$des <- factor(resSig.top$des, levels = orders)
-        if (length(unique(resSig.top$smvar)) <= 1) 
-          #next
-        resSig.top$smvar <- factor(resSig.top$smvar, levels = orders)
-        #resSig.top$des <- factor(resSig.top$des, levels = orders)
-      } else{
-        resSig.top$des <- factor(resSig.top$des, levels = orders)
-        if (length(unique(resSig.top$smvar)) > 1){
-          resSig.top$smvar <- factor(resSig.top$smvar, levels = orders)
-        }
-      }
+    if (!is.null(orders)) {
+      resSig.top[,groupby] <- factor(resSig.top[,groupby], levels = intersect(orders, resSig.top[,groupby]))
+      resSig.top[,facet] <- factor(resSig.top[,facet], levels = intersect(orders, resSig.top[,facet]))
+      print("Re-ordered")
     } else {
-      if (groupby == "smvar"){
-        if (length(unique(resSig.top$smvar)) <= 1) 
-          next
-        resSig.top$smvar <- factor(resSig.top$smvar)
-      } else{
-        if (length(unique(resSig.top$des)) <= 1) 
-          next
-        resSig.top$des <- factor(resSig.top$des)
-      }
+      resSig.top[,groupby] <- factor(resSig.top[,groupby])
+      resSig.top[,facet] <- factor(resSig.top[,facet])
+      print(2)
     }
     
 
 
     resSig.top$basline <- paste(resSig.top$basline," (n=",resSig.top$bas.count, ")",sep="")
     resSig.top$smvar <- paste(resSig.top$smvar," (n=", resSig.top$smvar.count, ")",sep="")
+    
+    
+    # re-order using number
+    new.orders <- c()
+    for(i in orders){
+      if(length(order <- grep(i, unique(resSig.top$smvar)))){
+        order <- c(unique(resSig.top$smvar)[order])
+      }
+      new.orders <- c(new.orders, order)
+    }
+    
+    tt <- try(resSig.top$smvar  <- factor(resSig.top[,facet], levels = intersect(new.orders, resSig.top$smvar)),T)
+    
+    if (class(tt) =="try-error"){
+      resSig.top$smvar  <- factor(resSig.top[,groupby], levels = intersect(new.orders, resSig.top$smvar))
+    } else{
+      resSig.top$smvar  <- factor(resSig.top[,facet], levels = intersect(new.orders, resSig.top$smvar))
+    }
+    
+
+
+    
+    
 
     print(1)
     if (groupby == "smvar"){
@@ -131,3 +140,4 @@ Go_DA_heat <- function(df, project, data_type, facet,groupby,font, fdr,fc, order
   grid.draw(p4)
   dev.off()
 }
+

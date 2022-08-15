@@ -12,7 +12,7 @@
 #' Go_perm()
 
 
-Go_perm <- function(psIN, cate.vars, project, distance, distance_metrics, cate.conf=NULL, des, name=NULL){
+Go_perm <- function(psIN, cate.vars, project, distance_metrics, mul.vars=FALSE, name=NULL){
   # out dir
   out <- file.path(sprintf("%s_%s",project, format(Sys.Date(), "%y%m%d"))) 
   if(!file_test("-d", out)) dir.create(out)
@@ -26,19 +26,15 @@ Go_perm <- function(psIN, cate.vars, project, distance, distance_metrics, cate.c
   
 
   # Run
-  if (!is.null(des)) {
-    # Uni
-    print(sprintf("#--- Running Paired-PERMANOVA (%s) ---#", des))
-  }  else {
-    print("#--- Running Paired-PERMANOVA  ---#")
-  }
   set.seed(1)
   mapping.sel <-data.frame(sample_data(psIN))
   
-  res.pair <-{}
+  res <-{}
   # Run
   for (mvar in cate.vars) {
     mapping.sel.na <- mapping.sel[!is.na(mapping.sel[,mvar]), ]
+    
+    
     if (length(unique(mapping.sel.na[,mvar])) == 1){
       cat(sprintf("there is no group campare to %s\n",unique(mapping.sel[,mvar])))
       next
@@ -54,15 +50,9 @@ Go_perm <- function(psIN, cate.vars, project, distance, distance_metrics, cate.c
       
       distance <- Go_dist(psIN = psIN.sel, project = project, distance_metrics = distance_metric)
       
-      
-      # pairwise.adonis2
-      # pair.ado <- pairwise.adonis2(x=as.dist(distance[[distance_metric]]), factors = mapping.sel.na[,mvar], map=mapping.sel.na, cate.conf=adjust, mvar=mvar)
-      
       x <- as.dist(distance[[distance_metric]])
       factors <-  mapping.sel.na[,mvar]
-      map <- mapping.sel.na
       
-      co <- combn(unique(as.character(map[,mvar])),2)
       R2 <- c()
       p.value <- c()
       F.Model <- c()
@@ -70,65 +60,79 @@ Go_perm <- function(psIN, cate.vars, project, distance, distance_metrics, cate.c
       SumsOfSqs <- c()
       Df <- c()
       
+      x1=as.matrix(x)[factors %in% unique(factors), factors %in% unique(factors)]
       
+      # run
+      map.pair <- subset(mapping.sel.na, mapping.sel.na[,mvar] %in% unique(factors))
       
+      # count to table
       
-      
-      for(elem in 1:ncol(co)){
-        x1=as.matrix(x)[factors %in% c(as.character(co[1,elem]),as.character(co[2,elem])),
-                        factors %in% c(as.character(co[1,elem]),as.character(co[2,elem]))]
-        
-        # run
-        map.pair <- subset(map, map[,mvar] %in% c(co[1,elem],co[2,elem]))
-        
-# count to table
-        if (table(map.pair[,mvar])[co[1,elem]] <=2 | table(map.pair[,mvar])[co[2,elem]] <=2){
-          next
-        }
-        
-        if (!is.null(cate.conf)) {
-          form <- as.formula(sprintf("x1 ~ %s + %s", mvar, paste(setdiff(cate.conf, "SampleType"), collapse="+")))
-          print(form)
-        }else{
-          form <- as.formula(sprintf("x1 ~ %s", mvar))
-          print(form)
-        }
-        
-        ad <- adonis2(form, data = map.pair, permutations=999, by="terms")# "terms"  "margin" NULL
-  
-        pairs <- c(pairs,paste(co[1,elem],'vs',co[2,elem]));
-        Df <- c(Df,ad[1,1])
-        SumsOfSqs <- c(SumsOfSqs, ad[1,2])
-        R2 <- c(R2,ad[1,3])
-        F.Model <- c(F.Model,ad[1,4]);
-        p.value <- c(p.value,ad[1,5])
+      if (mul.vars == T) {
+
+        form <- as.formula(sprintf("x1 ~ %s", paste(setdiff(cate.vars, "SampleType"), collapse="+")))
+        print(form)
+      }else{
+        form <- as.formula(sprintf("x1 ~ %s", mvar))
+        print(form)
       }
       
-      pairw.res <- data.frame(pairs,Df,SumsOfSqs,R2,F.Model,p.value)
+      ad <- adonis2(form, data = map.pair, permutations=999, by="terms")# "terms"  "margin" NULL
+      
+      plot(ad)
+      
+      
+      Df <- c(Df,ad[1,1])
+      SumsOfSqs <- c(SumsOfSqs, ad[1,2])
+      R2 <- round(c(R2,ad[1,3]), digits=3)
+      F.Model <- c(F.Model,ad[1,4]);
+      p.value <- c(p.value,ad[1,5])
+      
+      pairw.res <- data.frame(Df,SumsOfSqs,R2,F.Model,p.value)
       
       class(pairw.res) <- c("pwadonis", "data.frame")
       # end adonis end
       tmp <- as.data.frame(pairw.res)
       tmp$distance_metric <- distance_metric
-      tmp$mvar <- mvar
-      tmp$adjusted <- paste(setdiff(cate.conf, "SampleType"), collapse="+")
-      res.pair <- rbind(res.pair, tmp)
+
+      
+      # end adonis end
+      tmp <- as.data.frame(pairw.res)
+      tmp$distance_metric <- distance_metric
+      
+      if(mul.vars == TRUE){
+        mul.form <- sprintf("x1 ~ %s", paste(setdiff(cate.vars, "SampleType"), collapse="+"))
+        tmp$formula <- mul.form
+        type <- "mulit"
+      } else {
+        tmp$mvar <- mvar
+        type <- "uni"
+      }
+      
+      res <- rbind(res, tmp)
+      
+
+    }
+    if(mul.vars == TRUE){
+      break
     }
   }
   
-  res.pair$padj <- p.adjust(res.pair$p.value, method="bonferroni")
+  res$padj <- p.adjust(res$p.value, method="bonferroni")
   
-  res.pair <- res.pair[,c("pairs", "Df","SumsOfSqs","R2","F.Model", "p.value", "padj", "distance_metric","mvar", "adjusted")]
-  
+ 
+  if(mul.vars == TRUE){
+    res <- res[,c("Df","SumsOfSqs","R2","F.Model", "p.value", "padj", "distance_metric","formula")]
+  } else {
+    res <- res[,c("Df","SumsOfSqs","R2","F.Model", "p.value", "padj", "distance_metric","mvar")]
+  }
   
   # output
-    write.csv(res.pair, quote = FALSE,col.names = NA, sprintf("%s/pair_permanova.%s.%s%s%s%s.csv", out_perm, 
+    write.csv(res, quote = FALSE,col.names = NA, sprintf("%s/pair_permanova.%s.%s.%s%s.csv", out_perm, 
               project, 
-              ifelse(is.null(cate.conf), "", paste(cate.conf, "adjusted.", sep = "")), 
-              ifelse(is.null(des), "", paste(des, ".", sep = "")), 
+              type, 
               ifelse(is.null(name), "", paste(name, ".", sep = "")), 
               format(Sys.Date(), "%y%m%d")),sep="/")
   
 
-  return(res.pair)
+  return(res)
 }

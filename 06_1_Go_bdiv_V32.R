@@ -7,6 +7,7 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
                     plot="PCoA",
                     ellipse="yes",
                     mycols=NULL,
+                    paired = NULL,
                     combination=NULL,
                     shapes = NULL, 
                     ID = NULL,  
@@ -41,12 +42,13 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
     orders <- NULL
   }
   
-  pdf(sprintf("%s/ordi.%s.%s%s%s%s%s.pdf", out_path, 
+  pdf(sprintf("%s/ordi.%s.%s%s%s%s%s%s.pdf", out_path, 
               project, 
               ifelse(is.null(facet), "", paste(facet, ".", sep = "")), 
               ifelse(is.null(combination), "", paste("(cbn=",combination, ").", sep = "")), 
               ifelse(is.null(cate.conf), "", paste("with_confounder", ".", sep = "")), 
-              ifelse(is.null(name), "", paste(name, ".", sep = "")), 
+              ifelse(is.null(paired), "", paste("(paired=",paired, ").", sep = "")), 
+              ifelse(is.null(name), "", paste(name, ".", sep = "")),
               format(Sys.Date(), "%y%m%d")), height = height, width = width)
 
   
@@ -234,7 +236,10 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
             p = p
           }
           
-          
+          if(!is.null(paired)){
+            p <- p + geom_line(aes_string(group = paired),color="grey", size=0.2,  arrow = arrow(type = "closed",
+                                                                                      length=unit(0.025, "inches")))
+          }
           #===================================#
           # Add permanova for two combination #
           #===================================#
@@ -307,7 +312,7 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
       for(distance_metric in distance_metrics){
         # remove na
         mapping.sel <- data.frame(sample_data(psIN))
-        mapping.sel[mapping.sel==""] <- "NA"
+        #mapping.sel[mapping.sel==""] <- "NA"
         mapping.sel.na <- mapping.sel[!is.na(mapping.sel[,mvar]), ]
         na.count <- length(mapping.sel.na)
         psIN.na <- prune_samples(rownames(mapping.sel[!is.na(mapping.sel[,mvar]), ]), psIN)
@@ -415,6 +420,12 @@ Go_bdiv <- function(psIN, cate.vars, project, orders, distance_metrics,
           p <- p
         }
         
+        
+        if(!is.null(paired)){
+          p <- p + geom_line(aes_string(group = paired),color="grey", size = 0.2,arrow = arrow(type = "closed",
+                                                                                    length=unit(0.025, "inches")))
+        }
+
         #===================================#
         # Add permanova                     #
         #===================================#

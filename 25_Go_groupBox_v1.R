@@ -1,7 +1,7 @@
 #' A Go_groupBox
 #'
 
-Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =NULL, rank, cutoff, color=NULL, ylim=NULL,flip,height, width){
+Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =NULL, rank, cutoff, mycols=NULL, ylim=NULL,flip,height, width){
   
   if(!is.null(dev.list())) dev.off()
   # out dir
@@ -43,7 +43,8 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
   if( max(data.frame(otu_table(ps.top))) < 1){
     ps.top.rel <- ps.top
   }else{
-    ps.top.rel <- transform_sample_counts(ps.top, function(x) x / log2(x)) # log(1+x) 를 하면 NaN가 많이 나온다. 
+    #ps.top.rel <- transform_sample_counts(ps.top, function(x) x / log2(x)) # log(1+x) 를 하면 NaN가 많이 나온다. 
+    ps.top.rel <- transform_sample_counts(ps.top, function(x) x / sum(x)) # percent
   }
 
   
@@ -149,15 +150,15 @@ Go_groupBox <- function(psIN, mainGroup, project, orders=NULL, top=NULL, name =N
   print(unique(df.sel.melt.clean$variable))
   p <- ggplot(df.sel.melt.clean, aes_string(x="variable", y="value", fill=mainGroup)) +  geom_boxplot(outlier.shape = NA,lwd=0.3) + 
     theme_bw() + theme(strip.background = element_blank()) + 
-    labs(y="Relative abundance (log2)", x= NULL) + ggtitle(sprintf("kruskal wallis p < %s",cutoff))
+    labs(y="Relative abundance", x= NULL) + ggtitle(sprintf("kruskal wallis p < %s",cutoff))
   
   # + stat_compare_means(aes_string(group = mainGroup),label = "p.format") + 
     
   #+ scale_x_discrete(limits = rev)
   
   
-  if(!is.null(color)){
-    p <- p + scale_fill_manual(values = color)
+  if(!is.null(mycols)){
+    p <- p + scale_fill_manual(values = mycols)
   }else{
     p <- p
   }

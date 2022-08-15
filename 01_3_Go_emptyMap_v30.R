@@ -7,8 +7,10 @@ Go_emptyMap <- function(psIN, project){
   
   # empty map table
   SampleID <- sample_names(psIN)
+  Contamination <- sample_names(psIN)
   StudyID <- sample_names(psIN)
-  emptyMap <- data.frame(SampleID, StudyID)
+  
+  emptyMap <- data.frame(SampleID, Contamination, StudyID)
   
   cat(sprintf("empty map is saved in %s.\n",map))
   cat("                                                       \n")

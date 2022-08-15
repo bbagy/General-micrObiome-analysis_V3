@@ -3,7 +3,7 @@
 
 
 
-Go_DA <- function(psIN,  project, order, filter, taxanames=NULL, data_type = "other", 
+Go_DA <- function(psIN,  project, filter, taxanames=NULL, data_type = "other", 
                   cate.vars,  cate.conf=NULL, orders=NULL,
                   name=NULL, fdr=0.05){
 

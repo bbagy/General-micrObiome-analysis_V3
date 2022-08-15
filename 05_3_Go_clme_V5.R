@@ -8,7 +8,7 @@
 #' Go_clme()
 
 
-Go_clme <- function(psIN, cate.vars, project, paired, mycols=NULL, node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
+Go_clme <- function(psIN, cate.vars, project, paired, mycols=NULL, addnumber=TRUE,node, decreasing, height,timepoint,ID, orders,xangle, name, width, plotCols, plotRows){
     
   if(!is.null(dev.list())) dev.off()
     
@@ -64,7 +64,6 @@ Go_clme <- function(psIN, cate.vars, project, paired, mycols=NULL, node, decreas
   }
 
   
-  
   # clme
   cons <- list(order = "umbrella" , node=node, decreasing = decreasing) 
   # 전반적인 패턴을 보고 가장 높은 time point 에 node를 설정  
@@ -93,6 +92,28 @@ Go_clme <- function(psIN, cate.vars, project, paired, mycols=NULL, node, decreas
     adiv.na <- subset(adiv, adiv[,mvar] != "NA");adiv.na[,mvar]  # subset 를 사용한 NA 삭제
     adiv <- adiv.na
     
+
+
+    # Add number of samples in the group
+    if(addnumber==TRUE){
+    renamed_levels <- as.character(levels(adiv[,mvar]));renamed_levels
+    oldNames <- unique(adiv[,mvar]);oldNames
+    if (length(renamed_levels) == 0) {
+      renamed_levels <- oldNames
+    }
+    for (name in oldNames) {
+      total <- length(which(adiv[,mvar] == name));total
+      new_n <- paste(name, " (n=", total, ")", sep="");new_n
+      levels(adiv[[mvar]])[levels(adiv[[mvar]])== name] <- new_n
+      renamed_levels <- replace(renamed_levels, renamed_levels == name, new_n);renamed_levels
+    }
+    }else{
+      adiv <- adiv
+    }
+
+
+
+
     if (mvar == timepoint){
       for (am in alpha_metrics){
         form <-as.formula(sprintf("%s ~ %s + (1|%s)" , am, timepoint, paired))
@@ -122,12 +143,20 @@ Go_clme <- function(psIN, cate.vars, project, paired, mycols=NULL, node, decreas
         
         # plot
         p <- ggplot(adiv, mapping = aes_string(x=timepoint, y=am, color=timepoint, group=paired)) + 
-          geom_line(color="grey",size=line.tickness) + 
-          geom_point(alpha = 0.8, size = dot.size) + ylab(sprintf("%s Index\n", am)) + 
+          geom_line(color="grey",size=line.tickness,position = position_dodge(0.3)) + 
+          geom_point(alpha = 0.8, size = dot.size,position = position_dodge(0.3)) + ylab(sprintf("%s Index\n", am)) + 
           ggtitle(sprintf("%s \n (%s) ", mvar, clme.globalp))  + 
           theme_bw() + theme(strip.background = element_blank()) + 
-          theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" )+ 
-          scale_color_manual(values = mycols)
+          theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" )           
+          
+          
+          if(!is.null(mycols)){
+           p <- p + scale_color_manual(values = mycols)
+           }else{
+           p <- p
+           }
+
+
         
         if (length(ID) == 1) {
           p= p + geom_text_repel(aes_string(label = ID), size = 2)
@@ -155,16 +184,29 @@ Go_clme <- function(psIN, cate.vars, project, paired, mycols=NULL, node, decreas
           }
           
           clme.globalp <- paste("CLME P=",clme.globalp(clme.sum))
+
+
+                  # plot design
+        if (height*width <= 6){
+          dot.size = 0.6
+          line.tickness = 0.3
+        }else if (height*width > 6 & height*width < 10){
+          dot.size = 0.9
+          line.tickness = 0.4
+        }else{
+          dot.size = 1.3
+          line.tickness = 0.5
+        }
           
           # plot
           p <- ggplot(adiv[adiv[,mvar]==des,], mapping = aes_string(x=timepoint, y=am, color=timepoint, group=paired)) + 
-            geom_line(color="grey",size=line.tickness) + geom_point(alpha = 0.8, size = dot.size) + 
+            geom_line(color="grey",size=line.tickness,position = position_dodge(0.3)) + geom_point(alpha = 0.8, size = dot.size,position = position_dodge(0.3)) + 
             xlab(timepoint) + ylab(sprintf("%s Index\n", am)) + 
             ggtitle(sprintf("%s-%s \n (%s) ", mvar, des, clme.globalp))   + theme_bw() +
             theme(title=element_text(size=8), axis.text.x=element_text(angle=xangle,hjust=1,vjust=0.5)) + theme(legend.position= "NONE" ) 
 
 
-           if(!is.null(mycol)){
+           if(!is.null(mycols)){
            p <- p + scale_color_manual(values = mycols)
            }else{
            p <- p
