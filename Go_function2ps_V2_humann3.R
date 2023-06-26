@@ -18,16 +18,14 @@ Go_function2ps <- function(tabPath,
     break
   }else if(any(grepl(func.type, c("picrust","Picrust","Picrust2","PICRUSt","PICRUSTt2")))){
     func.type <- "PICRUSTt2"
-    
     # Read tab
     func.tab <- read_tsv(tabPath,col_types = cols())
-    
   }else if(any(grepl(func.type, c("Human","Humann","humann","human","Human2","Humann2","humann2","human2")))){
     func.type <- "Humann2"
     
     func.tab <- read.csv(sprintf("%s",tabPath), header=T, as.is=T, sep="\t", row.names=1, comment.char="", quote="")
     
-    for (rev in c("NO_NAME", "ribosomal protein","UNGROUPED","unclassified","UNMAPPED","UNINTEGRATED")){
+    for (rev in c("ribosomal protein","UNGROUPED","unclassified","UNMAPPED","UNINTEGRATED")){ # ,"NO_NAME"
       func.tab <- subset(func.tab, !(grepl(rev, rownames(func.tab))))
       print(dim(func.tab))
     }
@@ -36,6 +34,8 @@ Go_function2ps <- function(tabPath,
     rownames(func.tab) <- gsub(",", ".", rownames(func.tab));head(rownames(func.tab))
     func.tab1 <- data.frame(str_split(rownames(func.tab), ": ", simplify = T));head(func.tab)
     func.tab$X3 <- NULL; head(func.tab)
+    
+    colnames(func.tab)
     
     
     rownames(func.tab) <- func.tab1$X1
@@ -68,6 +68,8 @@ Go_function2ps <- function(tabPath,
   }else if (any(grepl("PWY", rownames(tax)))){
     colnames(tax) <- c("pathway","path.des")
     func <- "pathway"
+  }else{
+    func <- NULL
   }
   
   #merge phyloseq
@@ -79,10 +81,10 @@ Go_function2ps <- function(tabPath,
   # saving file
   rds <- file.path("2_rds") 
   if(!file_test("-d", rds)) dir.create(rds)
-  saveRDS(ps, sprintf("%s/ps.%s.%s.%s.%s%s.rds",rds,
+  saveRDS(ps, sprintf("%s/ps.%s.%s.%s%s%s.rds",rds,
                       func.type,
-                      func,
                       project,
+                      ifelse(is.null(func), "", paste(func, ".", sep = "")), 
                       ifelse(is.null(name), "", paste(name, ".", sep = "")), 
                       format(Sys.Date(), "%y%m%d")))
 }
